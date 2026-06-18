@@ -1,0 +1,27 @@
+# Java / Spring Boot
+backend/target/
+*.class
+
+# Node / Vue
+frontend/node_modules/
+frontend/dist/
+
+# Local config
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
