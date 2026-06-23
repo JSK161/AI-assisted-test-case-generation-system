@@ -45,7 +45,7 @@ public class ChatController {
             @Valid @RequestBody ChatGenerateRequest request,
             HttpServletRequest httpRequest) {
         GeneratedPlanVO result = chatGenerationService.generate(request);
-        saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), null, request.getAnswers());
+        saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, request.getAnswers());
         return ApiResponse.success(result);
     }
 
@@ -70,9 +70,12 @@ public class ChatController {
             } else if (result instanceof GeneratedPlanVO) {
                 conversationService.addMessage(conversationId, userId, "assistant", "测试方案已生成");
                 conversationService.updatePlan(conversationId, userId, result);
+                if (answers != null) {
+                    conversationService.updateAnswers(conversationId, userId, answers);
+                }
             }
         } catch (Exception ignored) {
-            // Conversation saving is best-effort
+            System.err.println("saveChatContext error: " + ignored.getMessage());
         }
     }
 }

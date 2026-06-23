@@ -342,9 +342,9 @@ async function loadConversation(id: number) {
     if (detail.generatedPlan) {
       generatedPlan.value = detail.generatedPlan as GeneratedPlan
       stage.value = 'result'
-    } else if (detail.answers && detail.answers.length > 0) {
-      stage.value = 'questions'
     } else {
+      // No plan yet — show conversation in home mode for further editing
+      generatedPlan.value = null
       stage.value = 'home'
     }
     ElMessage.success('已加载对话')
@@ -377,6 +377,16 @@ async function startConversation() {
   answers.value = []
   questions.value = []
   isPreparingQuestions.value = true
+
+  // Create conversation and save initial user message
+  try {
+    const title = requirement.length > 50 ? requirement.substring(0, 50) + '...' : requirement
+    const conv = await createConversation(title, requirement)
+    conversationId.value = conv.id
+    await addMessage(conv.id, 'user', requirement)
+  } catch {
+    // continue without persistence
+  }
 
   try {
     const result = await generateClarifyingQuestions({
