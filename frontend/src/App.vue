@@ -75,7 +75,7 @@ html, body, #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
+  background: var(--color-bg, #fbfbfd);
 }
 
 .top-nav {
@@ -84,8 +84,8 @@ html, body, #app {
   justify-content: space-between;
   padding: 0 24px;
   height: 56px;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid var(--color-border, #e8e8f0);
   backdrop-filter: blur(12px);
   flex-shrink: 0;
 }
@@ -94,7 +94,7 @@ html, body, #app {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #c4b5fd;
+  color: var(--color-primary, #6266f5);
   font-weight: 600;
   font-size: 16px;
 }
@@ -109,7 +109,7 @@ html, body, #app {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-muted, #7a7d8d);
   font-size: 14px;
 }
 
@@ -141,16 +141,16 @@ html, body, #app {
 
 /* Element Plus dropdown dark theme overrides */
 .el-dropdown-menu {
-  background: #1e1e3a !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--color-border, #e8e8f0) !important;
 }
 
 .el-dropdown-menu__item {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--color-text, #17171d) !important;
 }
 
 .el-dropdown-menu__item:hover {
-  background: rgba(108, 99, 255, 0.2) !important;
-  color: #c4b5fd !important;
+  background: var(--color-primary-soft, #f1f0ff) !important;
+  color: var(--color-primary, #6266f5) !important;
 }
 </style>
