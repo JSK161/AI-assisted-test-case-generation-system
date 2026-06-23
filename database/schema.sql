@@ -74,3 +74,27 @@ SELECT 'admin', '123456', '贾舒凯', 'ADMIN'
 WHERE NOT EXISTS (
   SELECT 1 FROM sys_user WHERE username = 'admin'
 );
+
+-- 对话历史记录表
+CREATE TABLE IF NOT EXISTS chat_conversation (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  requirement TEXT,
+  answers JSON,
+  generated_plan JSON,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_conversation_user_id (user_id),
+  INDEX idx_conversation_updated_at (updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS chat_message (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  conversation_id BIGINT NOT NULL,
+  sender VARCHAR(20) NOT NULL,
+  content TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_message_conversation_id (conversation_id),
+  CONSTRAINT fk_message_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversation(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

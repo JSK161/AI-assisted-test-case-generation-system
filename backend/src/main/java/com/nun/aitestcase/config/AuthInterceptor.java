@@ -30,7 +30,9 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new BusinessException(401, "Invalid or expired token");
         }
         Claims claims = jwtUtil.parseToken(token);
-        request.setAttribute("userId", claims.get("userId"));
+        Object userIdObj = claims.get("userId");
+        Long userId = (userIdObj instanceof Integer) ? ((Integer) userIdObj).longValue() : (Long) userIdObj;
+        request.setAttribute("userId", userId);
         request.setAttribute("username", claims.getSubject());
         request.setAttribute("role", claims.get("role"));
         return true;

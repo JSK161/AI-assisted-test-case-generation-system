@@ -4,6 +4,7 @@ import type { ChatAnswer, ClarificationQuestion, GeneratedPlan } from '@/types/c
 export interface QuestionGenerateRequest {
   requirement: string
   referenceUrl?: string
+  conversationId?: number
 }
 
 export interface QuestionGenerateResponse {
@@ -15,6 +16,7 @@ export interface ChatGenerateRequest {
   requirement: string
   answers: ChatAnswer[]
   referenceUrl?: string
+  conversationId?: number
 }
 
 export interface ChatGenerateResponse extends GeneratedPlan {

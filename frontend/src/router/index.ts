@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AiChatView from '@/views/AiChatView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
+import ProfileView from '@/views/ProfileView.vue'
 import { authStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -25,6 +26,11 @@ const router = createRouter({
     {
       path: '/chat',
       component: AiChatView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      component: ProfileView,
       meta: { requiresAuth: true }
     },
     { path: '/:pathMatch(.*)*', redirect: '/' }

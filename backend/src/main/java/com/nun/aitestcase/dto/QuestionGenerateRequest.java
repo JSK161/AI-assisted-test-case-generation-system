@@ -12,6 +12,8 @@ public class QuestionGenerateRequest {
     @Size(max = 1000, message = "参考链接不能超过 1000 个字符")
     private String referenceUrl;
 
+    private Long conversationId;
+
     public String getRequirement() {
         return requirement;
     }
@@ -26,5 +28,13 @@ public class QuestionGenerateRequest {
 
     public void setReferenceUrl(String referenceUrl) {
         this.referenceUrl = referenceUrl;
+    }
+
+    public Long getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(Long conversationId) {
+        this.conversationId = conversationId;
     }
 }

@@ -236,7 +236,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowUp,
   Blocks,
@@ -258,6 +259,7 @@ import {
 } from '@lucide/vue'
 import { ElMessage } from 'element-plus'
 import { generateChatPlan, generateClarifyingQuestions } from '@/api/chat'
+import { createConversation, addMessage, getConversation } from '@/api/conversation'
 import type { ChatAnswer, ChatMessage, ClarificationQuestion, GeneratedPlan } from '@/types/chat'
 import {
   appendConfirmQuestion,
@@ -287,6 +289,9 @@ const categories: CategoryItem[] = [
   { label: '研发测试', prompt: '请生成研发自测用例方案', color: '#ffad42', icon: Bot }
 ]
 
+const route = useRoute()
+const router = useRouter()
+
 const stage = ref<Stage>('home')
 const selectedCategory = ref('研发测试')
 const requirementInput = ref('我想测试登录模块')
@@ -301,6 +306,8 @@ const usedModel = ref('AI 生成')
 const questionModel = ref('DeepSeek')
 const questions = ref<ClarificationQuestion[]>([])
 const isPreparingQuestions = ref(false)
+const conversationId = ref<number | null>(null)
+const isLoadingConversation = ref(false)
 
 const totalQuestions = computed(() => questions.value.length)
 const currentQuestion = computed<ClarificationQuestion | null>(() => getNextQuestion(questions.value, answers.value))
@@ -308,6 +315,45 @@ const currentIndex = computed(() => currentQuestion.value ? questions.value.find
 const canProceed = computed(() => currentQuestion.value?.id === 'confirm' || selectedValues.value.length > 0 || Boolean(customText.value.trim()))
 const answerSummary = computed(() => buildAnswerSummary(questions.value, answers.value))
 const sessionTitle = computed(() => `${extractTitle(requirementInput.value)}-test-cases`)
+
+onMounted(async () => {
+  const id = route.query.conversationId
+  if (id && !isNaN(Number(id))) {
+    await loadConversation(Number(id))
+  }
+})
+
+async function loadConversation(id: number) {
+  isLoadingConversation.value = true
+  try {
+    const detail = await getConversation(id)
+    conversationId.value = id
+    requirementInput.value = detail.requirement || ''
+    messages.value = (detail.messages || []).map((m: any) => ({
+      id: m.id.toString(),
+      sender: m.sender as 'user' | 'assistant',
+      content: m.content,
+      createdAt: m.createdAt
+    }))
+
+    if (detail.answers) {
+      answers.value = Array.isArray(detail.answers) ? detail.answers : []
+    }
+    if (detail.generatedPlan) {
+      generatedPlan.value = detail.generatedPlan as GeneratedPlan
+      stage.value = 'result'
+    } else if (detail.answers && detail.answers.length > 0) {
+      stage.value = 'questions'
+    } else {
+      stage.value = 'home'
+    }
+    ElMessage.success('已加载对话')
+  } catch {
+    ElMessage.error('加载对话失败')
+  } finally {
+    isLoadingConversation.value = false
+  }
+}
 
 function applyCategory(item: CategoryItem) {
   selectedCategory.value = item.label
@@ -320,6 +366,7 @@ async function startConversation() {
     ElMessage.warning('请先描述要测试的模块或功能')
     return
   }
+  conversationId.value = null
   stage.value = 'questions'
   generatedPlan.value = null
   usedModel.value = 'AI 生成'
@@ -334,7 +381,8 @@ async function startConversation() {
   try {
     const result = await generateClarifyingQuestions({
       requirement,
-      referenceUrl: referenceUrl.value.trim() || undefined
+      referenceUrl: referenceUrl.value.trim() || undefined,
+      conversationId: conversationId.value || undefined
     })
     questions.value = appendConfirmQuestion(result.questions || [])
     questionModel.value = result.usedModel || 'DeepSeek'
@@ -417,7 +465,8 @@ async function generatePlan() {
     const result = await generateChatPlan({
       requirement: requirementInput.value,
       answers: answers.value,
-      referenceUrl: referenceUrl.value.trim() || undefined
+      referenceUrl: referenceUrl.value.trim() || undefined,
+      conversationId: conversationId.value || undefined
     })
     generatedPlan.value = result
     usedModel.value = result.usedModel || 'DeepSeek'
@@ -427,11 +476,12 @@ async function generatePlan() {
   }
 }
 
-function sendFollowUp() {
+async function sendFollowUp() {
   if (!followUpInput.value.trim()) {
     return
   }
-  messages.value.push(createMessage('user', followUpInput.value.trim()))
+  const content = followUpInput.value.trim()
+  messages.value.push(createMessage('user', content))
   messages.value.push(createMessage('assistant', '已收到补充说明，您可以重新生成或手动复制当前方案继续完善。'))
   followUpInput.value = ''
 }

@@ -7,6 +7,10 @@
       </div>
 
       <div class="nav-right">
+        <router-link to="/profile" class="nav-link">
+          <Clock :size="16" />
+          历史
+        </router-link>
         <span class="user-info">
           <UserRound :size="16" />
           {{ authStore.user?.realName || authStore.user?.username }}
@@ -37,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { Sparkles, UserRound } from '@lucide/vue'
+import { Sparkles, UserRound, Clock } from '@lucide/vue'
 import { authStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
@@ -103,6 +107,24 @@ html, body, #app {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted, #7a7d8d);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-link:hover {
+  color: var(--color-primary, #6266f5);
+  background: var(--color-primary-soft, #f1f0ff);
 }
 
 .user-info {
