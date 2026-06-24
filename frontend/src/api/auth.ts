@@ -14,13 +14,13 @@ export function registerApi(data: RegisterRequest) {
 }
 
 export function getProfileApi() {
-  return request.get<UserInfo, UserInfo>('/auth/profile')
+  return request.get<UserInfo, UserInfo>('/user/profile')
 }
 
 export function updateEmailApi(data: UpdateEmailRequest) {
-  return request.put<void, void>('/auth/email', data)
+  return request.put<void, void>('/user/email', data)
 }
 
 export function updatePasswordApi(data: UpdatePasswordRequest) {
-  return request.put<void, void>('/auth/password', data)
+  return request.put<void, void>('/user/password', data)
 }
