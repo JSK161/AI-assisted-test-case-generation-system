@@ -46,7 +46,7 @@ public class AuthService {
         return new LoginResponse(token, toUserVO(user));
     }
 
-    public LoginResponse register(String username, String password, String realName) {
+    public LoginResponse register(String username, String password, String realName, String email) {
         if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
             throw new BusinessException("Username and password are required");
         }
@@ -58,10 +58,46 @@ public class AuthService {
         user.setUsername(trimmedUsername);
         user.setPassword(passwordEncoder.encode(password));
         user.setRealName(StringUtils.hasText(realName) ? realName.trim() : trimmedUsername);
+        user.setEmail(StringUtils.hasText(email) ? email.trim() : null);
         user.setRole("MEMBER");
         userMapper.insert(user);
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
         return new LoginResponse(token, toUserVO(user));
+    }
+
+    public void updateEmail(Long userId, String newEmail) {
+        if (!StringUtils.hasText(newEmail)) {
+            throw new BusinessException("Email is required");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "User not found");
+        }
+        user.setEmail(newEmail.trim());
+        userMapper.updateById(user);
+    }
+
+    public void updatePassword(Long userId, String currentPassword, String newPassword) {
+        if (!StringUtils.hasText(currentPassword) || !StringUtils.hasText(newPassword)) {
+            throw new BusinessException("Current password and new password are required");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "User not found");
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BusinessException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
+
+    public UserVO getUserProfile(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "User not found");
+        }
+        return toUserVO(user);
     }
 
     private UserVO toUserVO(User user) {
@@ -69,6 +105,7 @@ public class AuthService {
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setRealName(user.getRealName());
+        vo.setEmail(user.getEmail());
         vo.setRole(user.getRole());
         return vo;
     }

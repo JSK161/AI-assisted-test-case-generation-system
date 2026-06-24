@@ -31,14 +31,14 @@
           />
         </el-form-item>
 
-        <el-form-item prop="confirmPassword">
+        <el-form-item prop="email">
           <el-input
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="确认密码"
-            :prefix-icon="Lock"
+            v-model="form.email"
+            placeholder="邮箱（选填）"
+            :prefix-icon="Mail"
             size="large"
-            show-password
+            clearable
+            type="email"
             @keyup.enter="handleRegister"
           />
         </el-form-item>
@@ -67,7 +67,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock, Sparkles } from '@lucide/vue'
+import { User, Lock, Mail, Sparkles } from '@lucide/vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { registerApi } from '@/api/auth'
@@ -78,7 +78,8 @@ const formRef = ref<FormInstance>()
 
 const form = reactive({
   username: '',
-  password: ''
+  password: '',
+  email: ''
 })
 
 const rules: FormRules = {
@@ -89,6 +90,9 @@ const rules: FormRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少需要 6 个字符', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
   ]
 }
 
@@ -102,7 +106,8 @@ async function handleRegister() {
   try {
     const res = await registerApi({
       username: form.username.trim(),
-      password: form.password
+      password: form.password,
+      email: form.email.trim() || undefined
     })
     authStore.login(res.token, res.user)
     ElMessage.success('注册成功')

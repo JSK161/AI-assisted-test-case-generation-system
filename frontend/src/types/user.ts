@@ -2,6 +2,7 @@ export interface UserInfo {
   id: number
   username: string
   realName: string
+  email: string
   role: string
 }
 
@@ -18,5 +19,15 @@ export interface LoginRequest {
 export interface RegisterRequest {
   username: string
   password: string
-  realName: string
+  realName?: string
+  email?: string
+}
+
+export interface UpdateEmailRequest {
+  email: string
+}
+
+export interface UpdatePasswordRequest {
+  currentPassword: string
+  newPassword: string
 }

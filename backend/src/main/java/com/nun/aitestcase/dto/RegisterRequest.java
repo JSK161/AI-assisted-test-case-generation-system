@@ -16,6 +16,8 @@ public class RegisterRequest {
     @Size(max = 50, message = "Real name must not exceed 50 characters")
     private String realName;
 
+    private String email;
+
     public String getUsername() {
         return username;
     }
@@ -38,5 +40,13 @@ public class RegisterRequest {
 
     public void setRealName(String realName) {
         this.realName = realName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
