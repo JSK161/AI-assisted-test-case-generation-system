@@ -150,16 +150,19 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { History, Lock, Mail, MessageSquare, Plus, Settings, Trash2 } from '@lucide/vue'
+import { History, Lock, Mail, MessageSquare, Plus, Settings, Trash2, Users } from '@lucide/vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authStore } from '@/stores/auth'
 import { listConversations, deleteConversation } from '@/api/conversation'
 import { updateEmailApi, updatePasswordApi, getProfileApi } from '@/api/auth'
+import { listUsersApi, updateUserRoleApi, deleteUserApi } from '@/api/admin'
 import type { ConversationListItem } from '@/api/conversation'
 
 const router = useRouter()
 const conversations = ref<ConversationListItem[]>([])
 const loading = ref(true)
+
+const userList = ref<UserInfo[]>([])
 
 // Email editing
 const editingEmail = ref(false)
@@ -235,6 +238,40 @@ async function savePassword() {
   }
 }
 
+// ---- Admin ----
+async function loadUsers() {
+  try {
+    userList.value = await listUsersApi()
+  } catch {
+    // ignore
+  }
+}
+
+async function updateUserRole(id: number, role: string) {
+  try {
+    await updateUserRoleApi(id, role)
+    const user = userList.value.find((u) => u.id === id)
+    if (user) user.role = role
+    ElMessage.success('角色已更新')
+  } catch (e: any) {
+    ElMessage.error(e.message || '更新失败')
+  }
+}
+
+async function deleteUser(row: UserInfo) {
+  try {
+    await ElMessageBox.confirm(`确定要删除用户 "${row.username}" 吗？`, '提示', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+    })
+    await deleteUserApi(row.id)
+    userList.value = userList.value.filter((u) => u.id !== row.id)
+    ElMessage.success('已删除')
+  } catch {
+    // cancelled
+  }
+}
+// ---- End Admin ----
+
 onMounted(async () => {
   try {
     const [convList] = await Promise.all([
@@ -242,6 +279,9 @@ onMounted(async () => {
       getProfileApi().then(u => { if (authStore.user) authStore.user.email = u.email }).catch(() => {})
     ])
     conversations.value = convList
+    if (authStore.isAdmin.value) {
+      loadUsers()
+    }
   } catch {
     ElMessage.error('加载对话列表失败')
   } finally {

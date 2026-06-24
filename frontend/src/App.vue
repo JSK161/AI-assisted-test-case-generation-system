@@ -1,15 +1,15 @@
 <template>
   <div class="app-shell">
     <nav v-if="authStore.token" class="top-nav">
-      <div class="nav-brand">
+      <router-link to="/" class="nav-brand">
         <Sparkles :size="18" />
         <span>测例 AI</span>
-      </div>
+      </router-link>
 
       <div class="nav-right">
         <router-link to="/profile" class="nav-link">
-          <Clock :size="16" />
-          历史
+          <UserRound :size="16" />
+          个人中心
         </router-link>
         <span class="user-info">
           <UserRound :size="16" />
@@ -23,8 +23,9 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile" disabled>
-                {{ authStore.user?.username }}
+              <el-dropdown-item command="profile">
+                <UserRound :size="14" />
+                个人中心
               </el-dropdown-item>
               <el-dropdown-item divided command="logout">
                 <span style="color: #f56c6c">退出登录</span>
@@ -41,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { Sparkles, UserRound, Clock } from '@lucide/vue'
+import { Sparkles, UserRound } from '@lucide/vue'
 import { authStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
@@ -49,7 +50,9 @@ import { ElMessageBox } from 'element-plus'
 const router = useRouter()
 
 function handleCommand(command: string) {
-  if (command === 'logout') {
+  if (command === 'profile') {
+    router.push('/profile')
+  } else if (command === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -101,6 +104,7 @@ html, body, #app {
   color: var(--color-primary, #6266f5);
   font-weight: 600;
   font-size: 16px;
+  text-decoration: none;
 }
 
 .nav-right {
