@@ -47,8 +47,8 @@ public class AuthService {
     }
 
     public LoginResponse register(String username, String password, String realName) {
-        if (!StringUtils.hasText(username) || !StringUtils.hasText(password) || !StringUtils.hasText(realName)) {
-            throw new BusinessException("Username, password and real name are required");
+        if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
+            throw new BusinessException("Username and password are required");
         }
         String trimmedUsername = username.trim();
         if (userMapper.selectByUsername(trimmedUsername) != null) {
@@ -57,7 +57,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(trimmedUsername);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRealName(realName.trim());
+        user.setRealName(StringUtils.hasText(realName) ? realName.trim() : trimmedUsername);
         user.setRole("MEMBER");
         userMapper.insert(user);
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());

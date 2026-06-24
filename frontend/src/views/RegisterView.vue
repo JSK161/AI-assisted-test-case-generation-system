@@ -20,16 +20,6 @@
           />
         </el-form-item>
 
-        <el-form-item prop="realName">
-          <el-input
-            v-model="form.realName"
-            placeholder="真实姓名"
-            :prefix-icon="UserRound"
-            size="large"
-            clearable
-          />
-        </el-form-item>
-
         <el-form-item prop="password">
           <el-input
             v-model="form.password"
@@ -77,7 +67,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock, Sparkles, UserRound } from '@lucide/vue'
+import { User, Lock, Sparkles } from '@lucide/vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { registerApi } from '@/api/auth'
@@ -88,34 +78,17 @@ const formRef = ref<FormInstance>()
 
 const form = reactive({
   username: '',
-  realName: '',
-  password: '',
-  confirmPassword: ''
+  password: ''
 })
-
-const validatePass = (_rule: any, value: string, callback: any) => {
-  if (value === '') {
-    callback(new Error('请确认密码'))
-  } else if (value !== form.password) {
-    callback(new Error('两次输入的密码不一致'))
-  } else {
-    callback()
-  }
-}
 
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 50, message: '用户名长度应为 3-50 个字符', trigger: 'blur' }
   ],
-  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少需要 6 个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    { validator: validatePass, trigger: 'blur' }
   ]
 }
 
@@ -129,8 +102,7 @@ async function handleRegister() {
   try {
     const res = await registerApi({
       username: form.username.trim(),
-      password: form.password,
-      realName: form.realName.trim()
+      password: form.password
     })
     authStore.login(res.token, res.user)
     ElMessage.success('注册成功')
