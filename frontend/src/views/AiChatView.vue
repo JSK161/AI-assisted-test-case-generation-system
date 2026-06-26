@@ -1,26 +1,5 @@
 <template>
   <main class="ai-page">
-    <header class="ai-header">
-      <div class="brand-lockup" aria-label="AI辅助测试用例生成系统">
-        <div class="brand-icon">
-          <Sparkles :size="20" />
-        </div>
-        <strong>测例 AI</strong>
-        <span>AI辅助测试用例生成系统</span>
-      </div>
-
-      <div class="header-actions">
-        <button class="credit-pill" type="button">
-          <Sparkle :size="16" />
-          <span>100</span>
-        </button>
-        <button class="ghost-button" type="button" @click="resetSession">
-          <RefreshCw :size="16" />
-          新会话
-        </button>
-      </div>
-    </header>
-
     <section v-if="stage === 'home'" class="home-stage">
       <p class="super-label">产品团队 <span>超级智能体</span></p>
       <h1>下午好，我能如何帮助您</h1>
@@ -36,7 +15,7 @@
           v-model="requirementInput"
           class="hero-textarea"
           rows="5"
-          placeholder="请描述功能需求或模块，例如：我想测试登录模块，需要覆盖账号密码、验证码和异常提示..."
+          placeholder='描述要测试的模块或功能，如"我想测试登录模块"'
           @keydown.enter.exact.prevent="startConversation"
         />
         <div class="composer-toolbar">
@@ -45,10 +24,23 @@
             极速
             <ChevronDown :size="15" />
           </button>
-          <label class="url-field">
+          <div class="url-field">
             <LinkIcon :size="17" />
-            <input v-model="referenceUrl" type="url" placeholder="可选：粘贴需求页面或案例 URL" />
-          </label>
+            <template v-if="uploadedFileName">
+              <span class="file-indicator" @click="clearUploadedFile">
+                <Paperclip :size="14" />
+                {{ uploadedFileName }}
+                <X :size="13" />
+              </span>
+            </template>
+            <template v-else>
+              <input v-model="referenceUrl" type="url" placeholder="可选：粘贴需求页面或案例 URL" />
+              <label class="file-btn" title="上传文件">
+                <Paperclip :size="16" />
+                <input ref="fileInputRef" type="file" hidden @change="handleFileUpload" />
+              </label>
+            </template>
+          </div>
           <button class="send-button" type="button" :disabled="!requirementInput.trim()" @click="startConversation">
             <ArrowUp :size="21" />
           </button>
@@ -249,9 +241,9 @@ import {
   FlaskConical,
   Link as LinkIcon,
   Network,
+  Paperclip,
   RefreshCw,
   ShieldCheck,
-  Sparkle,
   Sparkles,
   TestTubeDiagonal,
   X,
@@ -260,6 +252,7 @@ import {
 import { ElMessage } from 'element-plus'
 import { generateChatPlan, generateClarifyingQuestions } from '@/api/chat'
 import { createConversation, addMessage, getConversation } from '@/api/conversation'
+import mammoth from 'mammoth'
 import type { ChatAnswer, ChatMessage, ClarificationQuestion, GeneratedPlan } from '@/types/chat'
 import {
   appendConfirmQuestion,
@@ -294,9 +287,12 @@ const router = useRouter()
 
 const stage = ref<Stage>('home')
 const selectedCategory = ref('研发测试')
-const requirementInput = ref('我想测试登录模块')
+const requirementInput = ref('')
 const referenceUrl = ref('')
 const followUpInput = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFileName = ref('')
+const uploadedFileContent = ref('')
 const answers = ref<ChatAnswer[]>([])
 const selectedValues = ref<string[]>([])
 const customText = ref('')
@@ -358,20 +354,72 @@ async function loadConversation(id: number) {
 function applyCategory(item: CategoryItem) {
   selectedCategory.value = item.label
   requirementInput.value = item.prompt
+  // Auto focus the textarea after selecting a category
+  setTimeout(() => {
+    const textarea = document.querySelector('.hero-textarea') as HTMLTextAreaElement
+    textarea?.focus()
+  }, 0)
+}
+
+function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const textExts = ['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'csv', 'html', 'css', 'js', 'ts', 'vue', 'java', 'py', 'sql']
+  const wordExts = ['docx']
+
+  if (wordExts.includes(ext || '')) {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer
+      try {
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        uploadedFileContent.value = result.value
+        uploadedFileName.value = file.name
+        ElMessage.success(`已附加 ${file.name}`)
+      } catch {
+        ElMessage.error('解析 Word 文档失败')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  } else if (ext && textExts.includes(ext)) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      uploadedFileContent.value = e.target?.result as string
+      uploadedFileName.value = file.name
+      ElMessage.success(`已附加 ${file.name}`)
+    }
+    reader.readAsText(file, 'utf-8')
+  } else {
+    ElMessage.warning('仅支持文本文件（.txt, .md, .json）和 Word 文档（.docx）')
+  }
+  input.value = ''
+}
+
+function clearUploadedFile() {
+  uploadedFileName.value = ''
+  uploadedFileContent.value = ''
 }
 
 async function startConversation() {
   const requirement = requirementInput.value.trim()
-  if (!requirement) {
-    ElMessage.warning('请先描述要测试的模块或功能')
+  if (!requirement && !uploadedFileContent.value) {
+    ElMessage.warning('请先描述要测试的模块或功能，或上传文件')
     return
+  }
+  // Build full requirement: user text + file content (if any)
+  let fullRequirement = requirement
+  if (uploadedFileContent.value) {
+    fullRequirement += '\n\n【附加文件 ' + uploadedFileName.value + ' 的内容】\n' + uploadedFileContent.value
   }
   conversationId.value = null
   stage.value = 'questions'
   generatedPlan.value = null
   usedModel.value = 'AI 生成'
   messages.value = [
-    createMessage('user', requirement),
+    createMessage('user', (uploadedFileName.value ? `[文件：${uploadedFileName.value}] ` : '') + requirement),
     createMessage('assistant', '我先根据你的模块生成几个补充问题，然后再按你的选择生成测试用例。')
   ]
   answers.value = []
@@ -380,17 +428,19 @@ async function startConversation() {
 
   // Create conversation and save initial user message
   try {
-    const title = requirement.length > 50 ? requirement.substring(0, 50) + '...' : requirement
-    const conv = await createConversation(title, requirement)
+    const title = (requirement || uploadedFileName.value).length > 50
+      ? (requirement || uploadedFileName.value).substring(0, 50) + '...'
+      : (requirement || uploadedFileName.value)
+    const conv = await createConversation(title, fullRequirement)
     conversationId.value = conv.id
-    await addMessage(conv.id, 'user', requirement)
+    await addMessage(conv.id, 'user', requirement || `（已附加文件：${uploadedFileName.value}）`)
   } catch {
     // continue without persistence
   }
 
   try {
     const result = await generateClarifyingQuestions({
-      requirement,
+      requirement: fullRequirement,
       referenceUrl: referenceUrl.value.trim() || undefined,
       conversationId: conversationId.value || undefined
     })
@@ -471,9 +521,13 @@ function skipQuestion() {
 async function generatePlan() {
   stage.value = 'result'
   messages.value.push(createMessage('assistant', '我已开始整理测试范围、风险点和结构化测试用例。'))
+  let fullRequirement = requirementInput.value
+  if (uploadedFileContent.value) {
+    fullRequirement += '\n\n【附加文件 ' + uploadedFileName.value + ' 的内容】\n' + uploadedFileContent.value
+  }
   try {
     const result = await generateChatPlan({
-      requirement: requirementInput.value,
+      requirement: fullRequirement,
       answers: answers.value,
       referenceUrl: referenceUrl.value.trim() || undefined,
       conversationId: conversationId.value || undefined
@@ -481,7 +535,7 @@ async function generatePlan() {
     generatedPlan.value = result
     usedModel.value = result.usedModel || 'DeepSeek'
   } catch {
-    generatedPlan.value = createMockGeneratedPlan(requirementInput.value, questions.value, answers.value)
+    generatedPlan.value = createMockGeneratedPlan(fullRequirement, questions.value, answers.value)
     usedModel.value = '本地预览'
   }
 }
