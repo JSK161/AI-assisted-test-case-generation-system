@@ -1,21 +1,26 @@
 <template>
   <div class="app-shell">
     <nav v-if="authStore.token" class="top-nav">
-      <router-link to="/" class="nav-brand">
+      <a class="nav-brand" @click="goHome">
         <Sparkles :size="18" />
         <span>测例 AI</span>
-      </router-link>
+      </a>
 
       <div class="nav-right">
+        <button class="theme-btn" type="button" @click="themeStore.toggle()" :title="themeStore.theme === 'light' ? '切换暗夜模式' : '切换日间模式'">
+          <Sun v-if="themeStore.theme === 'light'" :size="16" />
+          <Moon v-else :size="16" />
+        </button>
+        <button class="ghost-btn" type="button" @click="goHome">
+          <RefreshCw :size="15" />
+          新会话
+        </button>
         <router-link to="/profile" class="nav-link">
           <UserRound :size="16" />
           个人中心
         </router-link>
         <span class="user-info">
-          <UserRound :size="16" />
           {{ authStore.user?.realName || authStore.user?.username }}
-          <el-tag v-if="authStore.user?.role === 'ADMIN'" size="small" type="warning" effect="dark">管理员</el-tag>
-          <el-tag v-else size="small" type="info" effect="dark">成员</el-tag>
         </span>
         <el-dropdown trigger="click" @command="handleCommand">
           <button class="avatar-btn" type="button">
@@ -36,18 +41,24 @@
       </div>
     </nav>
     <main class="app-main">
-      <RouterView />
+      <RouterView :key="$route.fullPath" />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Sparkles, UserRound } from '@lucide/vue'
+import { Moon, RefreshCw, Sparkles, Sun, UserRound } from '@lucide/vue'
 import { authStore } from '@/stores/auth'
+import { themeStore } from '@/stores/theme'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 
 const router = useRouter()
+
+function goHome() {
+  // Force re-navigation even when already at / to reset the chat page
+  router.push('/?t=' + Date.now())
+}
 
 function handleCommand(command: string) {
   if (command === 'profile') {
@@ -95,6 +106,14 @@ html, body, #app {
   border-bottom: 1px solid var(--color-border, #e8e8f0);
   backdrop-filter: blur(12px);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .top-nav {
+  background: rgba(26, 26, 46, 0.92);
 }
 
 .nav-brand {
@@ -105,6 +124,7 @@ html, body, #app {
   font-weight: 600;
   font-size: 16px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .nav-right {
@@ -129,6 +149,47 @@ html, body, #app {
 .nav-link:hover {
   color: var(--color-primary, #6266f5);
   background: var(--color-primary-soft, #f1f0ff);
+}
+
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--color-border, #e8e8f0);
+  border-radius: 8px;
+  color: var(--color-muted, #7a7d8d);
+  font-size: 13px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ghost-btn:hover {
+  color: var(--color-primary, #6266f5);
+  border-color: var(--color-primary, #6266f5);
+  background: var(--color-primary-soft, #f1f0ff);
+}
+
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-muted, #7a7d8d);
+  background: transparent;
+  border: 1px solid var(--color-border, #e8e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
 }
 
 .user-info {
@@ -163,6 +224,7 @@ html, body, #app {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 /* Element Plus dropdown dark theme overrides */
