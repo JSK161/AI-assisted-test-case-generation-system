@@ -1,5 +1,5 @@
-.page { min-height: 100vh; background: var(--color-bg); }
-.list-scroll { height: calc(100vh - 90px); padding: 12px 16px; }
+.page { min-height: 100vh; background: var(--color-bg); overflow-x: hidden; }
+.list-scroll { height: calc(100vh - 90px); padding: 12px 16px; overflow-y: auto; overflow-x: hidden; }
 .loading-state { padding: 20px; }
 .skeleton { height: 56px; margin-bottom: 8px; background: var(--color-surface-soft); border-radius: 10px; }
 

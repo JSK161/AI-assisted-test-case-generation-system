@@ -5,7 +5,13 @@ Page({
   data: {
     username: '',
     password: '',
-    loading: false
+    loading: false,
+    statusBarHeight: 44
+  },
+
+  onLoad() {
+    const app = getApp()
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight || 44 })
   },
 
   onUsernameInput(e) { this.setData({ username: e.detail.value }) },

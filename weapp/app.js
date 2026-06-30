@@ -2,11 +2,17 @@ import { authStore } from './utils/auth'
 
 App({
   globalData: {
-    baseUrl: 'http://localhost:8080/api'
+    baseUrl: 'http://localhost:8080/api',
+    statusBarHeight: 0,
+    safeAreaBottom: 0
   },
   onLaunch() {
+    try {
+      const sys = wx.getSystemInfoSync()
+      this.globalData.statusBarHeight = sys.statusBarHeight || 44
+      this.globalData.safeAreaBottom = sys.screenHeight - (sys.safeArea?.bottom || sys.screenHeight) + 10
+    } catch {}
     wx.cloud?.init({ env: 'prod' })
-    // Auto login if token exists
     const token = authStore.getToken()
     if (token) {
       this.checkLogin(token)

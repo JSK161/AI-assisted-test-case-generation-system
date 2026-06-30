@@ -9,7 +9,14 @@ Page({
     userList: [],
     roleOptions: ['ADMIN', 'MEMBER'],
     apiKey: '',
-    maskedApiKey: ''
+    maskedApiKey: '',
+    statusBarHeight: 44,
+    safeAreaBottom: 0
+  },
+
+  onLoad() {
+    const app = getApp()
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight || 44, safeAreaBottom: app.globalData.safeAreaBottom || 0 })
   },
 
   onShow() {
@@ -18,9 +25,16 @@ Page({
       return
     }
     const user = authStore.getUser()
+    const displayName = user?.realName || user?.username || ''
     this.setData({
       user,
-      userAvatar: (user?.realName || user?.username)?.[0] || '?',
+      displayName,
+      displayUsername: user?.username || '',
+      displayRoleTag: user?.role === 'ADMIN' ? 'tag-admin' : 'tag-member',
+      displayRoleText: user?.role === 'ADMIN' ? '管理员' : '成员',
+      hasEmail: !!user?.email,
+      displayEmail: user?.email || '未设置',
+      userAvatar: displayName?.[0] || '?',
       isAdmin: authStore.isAdmin()
     })
     this.loadProfile()
@@ -67,7 +81,12 @@ Page({
     try {
       const profile = await request.get('/user/profile')
       authStore.setUser(profile)
-      this.setData({ user: profile })
+      this.setData({
+        user: profile,
+        displayName: (profile.realName || profile.username || ''),
+        displayEmail: profile.email || '未设置',
+        hasEmail: !!profile.email
+      })
     } catch { /* ignore */ }
   },
 

@@ -25,13 +25,14 @@ page {
   font-size: 14px;
   color: var(--color-text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ===== Nav bar (custom) ===== */
 .nav-bar {
   display: flex;
   align-items: center;
-  padding: 48px 20px 12px;
+  padding: 0 20px 12px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   position: sticky;

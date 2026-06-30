@@ -1,7 +1,7 @@
 <view class="chat-page">
 
   <!-- Nav -->
-  <view class="chat-nav">
+  <view class="chat-nav" style="padding-top:{{statusBarHeight + 14}}px;">
     <view class="nav-left" bindtap="goHome">
       <text class="nav-logo">✦</text>
       <text class="nav-brand">测例 AI</text>
@@ -14,7 +14,7 @@
 
   <!-- ===== HOME STAGE ===== -->
   <block wx:if="{{stage === 'home'}}">
-    <scroll-view class="home-scroll" scroll-y>
+    <view class="home-scroll" style="padding-bottom:{{safeAreaBottom + 12}}px;">
       <view class="home-hero">
         <text class="super-label">超级智能体 <text style="color:var(--color-primary)">✦</text></text>
         <text class="hero-heading">下午好</text>
@@ -45,13 +45,13 @@
           </view>
         </view>
       </view>
-    </scroll-view>
+    </view>
   </block>
 
   <!-- ===== QUESTIONS STAGE ===== -->
   <block wx:elif="{{stage === 'questions'}}">
     <view class="question-page">
-      <scroll-view class="question-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="question-scroll" style="padding-bottom:{{safeAreaBottom + 12}}px;">
         <!-- Messages -->
         <view wx:for="{{messages}}" wx:key="id" class="msg-row {{item.sender === 'user' ? 'user' : 'assistant'}}">
           <view class="msg-content">
@@ -88,19 +88,19 @@
             </view>
           </view>
         </view>
-      </scroll-view>
+      </view>
     </view>
   </block>
 
   <!-- ===== RESULT STAGE ===== -->
   <block wx:elif="{{stage === 'result'}}">
     <view class="result-page">
-      <scroll-view class="result-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="result-scroll" style="padding-bottom:{{safeAreaBottom + 12}}px;">
         <view class="result-doc">
           <view class="doc-toolbar">
             <view>
-              <text class="doc-title">{{planData?.title || '测试方案'}}</text>
-              <text class="doc-meta">{{planData?.summary || ''}}</text>
+              <text class="doc-title">{{planTitle}}</text>
+              <text class="doc-meta">{{planSummary}}</text>
             </view>
             <view class="doc-actions">
               <text class="doc-btn" bindtap="copyPlan">📋</text>
@@ -112,7 +112,7 @@
           <view class="doc-section">
             <text class="doc-section-title">1. 被测对象与范围</text>
             <view class="scope-table">
-              <view wx:for="{{planData?.scope || []}}" wx:key="*this" class="scope-row">
+              <view wx:for="{{planScope}}" wx:key="*this" class="scope-row">
                 <text class="scope-key">{{item.split('：')[0]}}</text>
                 <text class="scope-val">{{item.includes('：') ? item.split('：').slice(1).join('：') : item}}</text>
               </view>
@@ -122,7 +122,7 @@
           <!-- Test Cases -->
           <view class="doc-section">
             <text class="doc-section-title">2. 测试用例</text>
-            <view wx:for="{{planData?.testCases || []}}" wx:key="id" class="testcase-block">
+            <view wx:for="{{planTestCases}}" wx:key="id" class="testcase-block">
               <view class="case-title">
                 <text class="case-id">{{item.id}}</text>
                 <text class="case-name">{{item.title}}</text>
@@ -140,10 +140,10 @@
           <!-- Risks -->
           <view class="doc-section">
             <text class="doc-section-title">3. 风险提示</text>
-            <view wx:for="{{planData?.risks || []}}" wx:key="*this" class="risk-item">⚠ {{item}}</view>
+            <view wx:for="{{planRisks}}" wx:key="*this" class="risk-item">⚠ {{item}}</view>
           </view>
         </view>
-      </scroll-view>
+      </view>
     </view>
   </block>
 </view>

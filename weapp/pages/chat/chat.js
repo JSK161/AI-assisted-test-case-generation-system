@@ -1,6 +1,5 @@
 import request from '../../utils/request'
 import { authStore } from '../../utils/auth'
-import { formatTime } from '../../utils/util'
 
 const categories = [
   { label: '推荐', prompt: '帮我生成一个功能模块的测试用例', color: '#6c63ff', icon: '★' },
@@ -19,6 +18,8 @@ Page({
     requirement: '',
     referenceUrl: '',
     userName: authStore.getUser()?.realName || authStore.getUser()?.username || '用户',
+    statusBarHeight: 44,
+    safeAreaBottom: 0,
     // Questions stage
     messages: [],
     questions: [],
@@ -41,6 +42,8 @@ Page({
   },
 
   onLoad(options) {
+    const app = getApp()
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight || 44, safeAreaBottom: app.globalData.safeAreaBottom || 0 })
     if (options.conversationId) {
       this.loadConversation(Number(options.conversationId))
     }
@@ -234,19 +237,33 @@ Page({
         referenceUrl: this.data.referenceUrl.trim() || undefined,
         conversationId: this.data.conversationId || undefined
       })
-      this.setData({ planData: result, usedModel: result.usedModel || 'DeepSeek' })
+      this.setPlanData(result)
     } catch {
-      // Mock fallback
+      this.setPlanData(null)
+    }
+  },
+
+  setPlanData(result) {
+    if (result) {
       this.setData({
-        planData: {
-          title: fullReq.substring(0, 30) + '-测试方案',
-          summary: '基于功能描述生成的系统测试方案',
-          scope: ['功能模块：' + fullReq.substring(0, 50)],
-          risks: ['暂无明确风险点'],
-          testCases: [
-            { id: 'TC-001', title: '基本功能验证', priority: 'P0', category: '功能测试', precondition: '系统正常运行', steps: ['步骤1', '步骤2', '验证结果'], expectedResult: '功能正确' }
-          ]
-        },
+        planData: result,
+        planTitle: result.title || '测试方案',
+        planSummary: result.summary || '',
+        planScope: result.scope || [],
+        planTestCases: result.testCases || [],
+        planRisks: result.risks || [],
+        usedModel: result.usedModel || 'DeepSeek'
+      })
+    } else {
+      this.setData({
+        planTitle: '测试方案',
+        planSummary: '基于功能描述生成的系统测试方案',
+        planScope: ['功能模块：' + (this.data.requirement || '目标模块')],
+        planRisks: ['暂无明确风险点'],
+        planTestCases: [{
+          id: 'TC-001', title: '基本功能验证', priority: 'P0', category: '功能测试',
+          precondition: '系统正常运行', steps: ['步骤1', '步骤2', '验证结果'], expectedResult: '功能正确'
+        }],
         usedModel: '本地预览'
       })
     }
@@ -261,9 +278,11 @@ Page({
         conversationId: id,
         requirement: detail.requirement || '',
         messages: msgs,
-        stage: detail.generatedPlan ? 'result' : 'home',
-        planData: detail.generatedPlan || null
+        stage: detail.generatedPlan ? 'result' : (msgs.length > 0 ? 'questions' : 'home')
       })
+      if (detail.generatedPlan) {
+        this.setPlanData(detail.generatedPlan)
+      }
     } catch {
       wx.showToast({ title: '加载失败', icon: 'none' })
     } finally {

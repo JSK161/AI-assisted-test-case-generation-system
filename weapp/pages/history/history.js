@@ -5,7 +5,14 @@ import { formatTime } from '../../utils/util'
 Page({
   data: {
     list: [],
-    loading: true
+    loading: true,
+    statusBarHeight: 44,
+    safeAreaBottom: 0
+  },
+
+  onLoad() {
+    const app = getApp()
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight || 44, safeAreaBottom: app.globalData.safeAreaBottom || 0 })
   },
 
   onShow() {
@@ -30,7 +37,7 @@ Page({
 
   openConv(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: `/pages/chat/chat?conversationId=${id}` })
+    wx.reLaunch({ url: `/pages/chat/chat?conversationId=${id}` })
   },
 
   deleteConv(e) {
