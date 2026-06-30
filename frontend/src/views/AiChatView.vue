@@ -89,6 +89,10 @@
             <Copy :size="16" />
             复制方案
           </button>
+          <button type="button" @click="downloadWord">
+            <Download :size="16" />
+            下载 Word
+          </button>
           <button type="button" @click="downloadMarkdown">
             <Download :size="16" />
             导出 Markdown
@@ -568,6 +572,64 @@ function downloadMarkdown() {
   link.download = `${sessionTitle.value}.md`
   link.click()
   URL.revokeObjectURL(url)
+}
+
+async function downloadWord() {
+  if (!generatedPlan.value) return
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle, HeadingLevel } = await import('docx')
+
+  const plan = generatedPlan.value
+  const rows: any[] = []
+
+  // Header row
+  rows.push(new TableRow({
+    tableHeader: true,
+    children: ['ID', '标题', '优先级', '类型', '前置条件', '步骤', '预期结果'].map(h =>
+      new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 20 })], alignment: AlignmentType.CENTER })], width: { size: h === '步骤' ? 2000 : 1200, type: WidthType.DXA } })
+    )
+  }))
+
+  // Data rows
+  for (const tc of plan.testCases || []) {
+    rows.push(new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph(tc.id)] }),
+        new TableCell({ children: [new Paragraph(tc.title)] }),
+        new TableCell({ children: [new Paragraph(tc.priority)] }),
+        new TableCell({ children: [new Paragraph(tc.category)] }),
+        new TableCell({ children: [new Paragraph(tc.precondition)] }),
+        new TableCell({ children: (tc.steps || []).map((s: string, i: number) => new Paragraph(`${i + 1}. ${s}`)) }),
+        new TableCell({ children: [new Paragraph(tc.expectedResult)] })
+      ]
+    }))
+  }
+
+  const doc = new Document({
+    sections: [{
+      children: [
+        new Paragraph({ text: plan.title || '测试方案', heading: HeadingLevel.HEADING_1 }),
+        new Paragraph({ text: plan.summary || '', spacing: { after: 200 } }),
+        new Paragraph({ text: '一、被测对象与范围', heading: HeadingLevel.HEADING_2 }),
+        ...(plan.scope || []).map(s => new Paragraph({
+          children: [new TextRun({ text: s, size: 22 })],
+          spacing: { after: 100 }
+        })),
+        new Paragraph({ text: '二、测试用例', heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
+        new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }),
+        new Paragraph({ text: '三、风险提示', heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
+        ...(plan.risks || []).map(r => new Paragraph({ text: `⚠ ${r}`, spacing: { after: 80 } }))
+      ]
+    }]
+  })
+
+  const blob = await Packer.toBlob(doc)
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${sessionTitle.value}.docx`
+  link.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('Word 文档已下载')
 }
 
 function resetSession() {
