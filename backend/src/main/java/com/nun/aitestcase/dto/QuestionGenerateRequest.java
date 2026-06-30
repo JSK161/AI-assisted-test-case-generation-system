@@ -14,6 +14,8 @@ public class QuestionGenerateRequest {
 
     private Long conversationId;
 
+    private String fileContent;
+
     public String getRequirement() {
         return requirement;
     }
@@ -36,5 +38,13 @@ public class QuestionGenerateRequest {
 
     public void setConversationId(Long conversationId) {
         this.conversationId = conversationId;
+    }
+
+    public String getFileContent() {
+        return fileContent;
+    }
+
+    public void setFileContent(String fileContent) {
+        this.fileContent = fileContent;
     }
 }

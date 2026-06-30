@@ -5,6 +5,7 @@ export interface QuestionGenerateRequest {
   requirement: string
   referenceUrl?: string
   conversationId?: number
+  fileContent?: string
 }
 
 export interface QuestionGenerateResponse {
@@ -17,6 +18,7 @@ export interface ChatGenerateRequest {
   answers: ChatAnswer[]
   referenceUrl?: string
   conversationId?: number
+  fileContent?: string
 }
 
 export interface ChatGenerateResponse extends GeneratedPlan {

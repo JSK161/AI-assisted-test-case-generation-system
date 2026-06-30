@@ -411,15 +411,12 @@ async function startConversation() {
   }
   // Build full requirement: user text + file content (if any)
   let fullRequirement = requirement
-  if (uploadedFileContent.value) {
-    fullRequirement += '\n\n【附加文件 ' + uploadedFileName.value + ' 的内容】\n' + uploadedFileContent.value
-  }
   conversationId.value = null
   stage.value = 'questions'
   generatedPlan.value = null
   usedModel.value = 'AI 生成'
   messages.value = [
-    createMessage('user', (uploadedFileName.value ? `[文件：${uploadedFileName.value}] ` : '') + requirement),
+    createMessage('user', (uploadedFileName.value ? `[文件：${uploadedFileName.value}] ` : '') + (requirement || '已上传文件，请根据文件内容生成测试方案')),
     createMessage('assistant', '我先根据你的模块生成几个补充问题，然后再按你的选择生成测试用例。')
   ]
   answers.value = []
@@ -440,9 +437,10 @@ async function startConversation() {
 
   try {
     const result = await generateClarifyingQuestions({
-      requirement: fullRequirement,
+      requirement: requirement,
       referenceUrl: referenceUrl.value.trim() || undefined,
-      conversationId: conversationId.value || undefined
+      conversationId: conversationId.value || undefined,
+      fileContent: uploadedFileContent.value || undefined
     })
     questions.value = appendConfirmQuestion(result.questions || [])
     questionModel.value = result.usedModel || 'DeepSeek'
@@ -527,10 +525,11 @@ async function generatePlan() {
   }
   try {
     const result = await generateChatPlan({
-      requirement: fullRequirement,
+      requirement: requirementInput.value,
       answers: answers.value,
       referenceUrl: referenceUrl.value.trim() || undefined,
-      conversationId: conversationId.value || undefined
+      conversationId: conversationId.value || undefined,
+      fileContent: uploadedFileContent.value || undefined
     })
     generatedPlan.value = result
     usedModel.value = result.usedModel || 'DeepSeek'
@@ -580,6 +579,8 @@ function resetSession() {
   questionModel.value = 'DeepSeek'
   isPreparingQuestions.value = false
   usedModel.value = 'AI 生成'
+  uploadedFileName.value = ''
+  uploadedFileContent.value = ''
   resetQuestionState()
 }
 

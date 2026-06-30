@@ -626,6 +626,132 @@ button:disabled {
 
 [data-theme="dark"] .message-row.assistant .message-bubble {
   background: transparent;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .message-row.user .message-bubble {
+  color: #1a1a2e;
+}
+
+/* Dark mode: result document — test cases bright, headings normal */
+[data-theme="dark"] .result-document h2,
+[data-theme="dark"] .result-document h3,
+[data-theme="dark"] .result-document strong {
+  color: #b0b0c0;
+}
+
+[data-theme="dark"] .doc-section h3 {
+  color: #b0b0c0;
+}
+
+[data-theme="dark"] .scope-table th {
+  background: #1e1e3a;
+  color: #7a7d90;
+}
+
+[data-theme="dark"] .scope-table td {
+  color: #e8e8f0;
+}
+
+[data-theme="dark"] .testcase-block {
+  color: #e8e8f0;
+}
+
+[data-theme="dark"] .testcase-block p b,
+[data-theme="dark"] .testcase-block p strong {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .case-title em,
+[data-theme="dark"] .case-title span {
+  color: #17171d;
+}
+
+[data-theme="dark"] .document-toolbar h2 {
+  color: #b0b0c0;
+}
+
+[data-theme="dark"] .document-toolbar span {
+  color: #6a6d80;
+}
+
+[data-theme="dark"] .document-toolbar button {
+  color: #6a6d80;
+  background: #1a1a2e;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .summary-block p {
+  color: #7a7d90;
+}
+
+/* Dark mode: question cards (option boxes) */
+[data-theme="dark"] .question-card {
+  background: #1a1a2e;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .question-card h2 {
+  color: #e8e8f0;
+}
+
+/* Dark mode: conversation panel */
+[data-theme="dark"] .conversation-panel {
+  background: #151528;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .session-title strong {
+  color: #d0d0e0;
+}
+
+[data-theme="dark"] .session-title span {
+  color: #6a6d80;
+}
+
+[data-theme="dark"] .coverage-card {
+  background: #1a1a2e;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .coverage-card span {
+  color: #8b8da0;
+}
+
+[data-theme="dark"] .coverage-card strong {
+  color: #e0e0ea;
+}
+
+[data-theme="dark"] .side-composer {
+  background: #151528;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .question-count {
+  color: #8b8da0;
+  background: #1e1e3a;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .option-list {
+  background: #1e1e3a;
+  border-color: #2a2a44;
+}
+
+[data-theme="dark"] .option-item:hover {
+  background: #2a2a44;
+}
+
+[data-theme="dark"] .option-item strong {
+  color: #e0e0ea;
+}
+
+[data-theme="dark"] .option-item small {
+  color: #8b8da0;
+}
+
+[data-theme="dark"] .custom-answer {
+  color: #e0e0ea;
 }
 
 .user-badge {

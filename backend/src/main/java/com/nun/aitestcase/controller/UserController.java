@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -36,6 +38,20 @@ public class UserController {
     public ApiResponse<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest body, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         authService.updatePassword(userId, body.getCurrentPassword(), body.getNewPassword());
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/api-key")
+    public ApiResponse<Map<String, String>> getApiKey(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        String key = authService.getUserApiKey(userId);
+        return ApiResponse.success(Map.of("apiKey", key != null ? key : ""));
+    }
+
+    @PutMapping("/api-key")
+    public ApiResponse<Void> updateApiKey(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        authService.updateApiKey(userId, body.get("apiKey"));
         return ApiResponse.success();
     }
 }

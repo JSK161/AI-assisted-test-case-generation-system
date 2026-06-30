@@ -18,6 +18,22 @@
 
       <!-- Settings Grid -->
       <div class="settings-grid">
+        <!-- API Key -->
+        <div class="settings-card" @click="!editingApiKey && startEditApiKey()">
+          <div class="settings-card-icon"><Key :size="18" /></div>
+          <div class="settings-card-body">
+            <span class="settings-card-label">API Key</span>
+            <template v-if="editingApiKey">
+              <el-input v-model="apiKeyForm.key" placeholder="输入 DeepSeek API Key (sk-...)" size="small" type="password" show-password @keyup.enter="saveApiKey" />
+              <div class="settings-card-actions">
+                <el-button type="primary" size="small" :loading="apiKeyLoading" @click.stop="saveApiKey">保存</el-button>
+                <el-button size="small" @click.stop="cancelEditApiKey">取消</el-button>
+              </div>
+            </template>
+            <span v-else class="settings-card-value">{{ maskedApiKey || '未设置（将使用 Mock 模式）' }}</span>
+          </div>
+        </div>
+
         <!-- Email -->
         <div class="settings-card" @click="!editingEmail && startEditEmail()">
           <div class="settings-card-icon"><Mail :size="18" /></div>
@@ -143,12 +159,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Lock, Mail, MessageSquare, Plus, RefreshCw, Settings, Trash2, Users } from '@lucide/vue'
+import { Key, Lock, Mail, MessageSquare, Plus, RefreshCw, Settings, Trash2, Users } from '@lucide/vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authStore } from '@/stores/auth'
 import { listConversations, deleteConversation } from '@/api/conversation'
 import { updateEmailApi, updatePasswordApi, getProfileApi } from '@/api/auth'
 import { listUsersApi, updateUserRoleApi, deleteUserApi } from '@/api/admin'
+import request from '@/utils/request'
 import type { ConversationListItem } from '@/api/conversation'
 import type { UserInfo } from '@/types/user'
 
@@ -156,6 +173,10 @@ const router = useRouter()
 const conversations = ref<ConversationListItem[]>([])
 const loading = ref(true)
 const userList = ref<UserInfo[]>([])
+const maskedApiKey = ref('')
+const editingApiKey = ref(false)
+const apiKeyLoading = ref(false)
+const apiKeyForm = reactive({ key: '' })
 
 // Email editing
 const editingEmail = ref(false)
@@ -218,6 +239,35 @@ async function loadUsers() {
   try { userList.value = await listUsersApi() } catch { /* ignore */ }
 }
 
+async function loadApiKey() {
+  try {
+    const res: any = await request.get('/user/api-key')
+    const key = res?.apiKey || ''
+    maskedApiKey.value = key ? key.substring(0, 8) + '••••' : ''
+    apiKeyForm.key = key
+  } catch { /* ignore */ }
+}
+
+function startEditApiKey() { editingApiKey.value = true }
+function cancelEditApiKey() {
+  editingApiKey.value = false
+  apiKeyForm.key = ''
+  loadApiKey()
+}
+
+async function saveApiKey() {
+  apiKeyLoading.value = true
+  try {
+    await request.put('/user/api-key', { apiKey: apiKeyForm.key.trim() })
+    const key = apiKeyForm.key.trim()
+    maskedApiKey.value = key ? key.substring(0, 8) + '••••' : ''
+    editingApiKey.value = false
+    ElMessage.success('API Key 已保存')
+  } catch (e: any) {
+    ElMessage.error(e.message || '保存失败')
+  } finally { apiKeyLoading.value = false }
+}
+
 async function refreshUsers() { await loadUsers(); ElMessage.success('已刷新') }
 
 async function updateUserRole(id: number, role: string) {
@@ -242,6 +292,7 @@ onMounted(async () => {
     conversations.value = await listConversations()
     getProfileApi().then((u) => { if (authStore.user) authStore.user.email = u.email }).catch(() => {})
     if (authStore.isAdmin.value) loadUsers()
+    loadApiKey()
   } catch { /* ignore */
   } finally { loading.value = false }
 })

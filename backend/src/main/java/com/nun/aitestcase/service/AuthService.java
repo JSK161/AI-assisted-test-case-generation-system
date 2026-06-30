@@ -100,6 +100,19 @@ public class AuthService {
         return toUserVO(user);
     }
 
+    public String getUserApiKey(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException(404, "User not found");
+        return user.getApiKey();
+    }
+
+    public void updateApiKey(Long userId, String apiKey) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException(404, "User not found");
+        user.setApiKey(apiKey != null && !apiKey.isBlank() ? apiKey.trim() : null);
+        userMapper.updateById(user);
+    }
+
     private UserVO toUserVO(User user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());

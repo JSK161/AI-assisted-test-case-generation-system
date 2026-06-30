@@ -21,6 +21,8 @@ public class ChatGenerateRequest {
 
     private Long conversationId;
 
+    private String fileContent;
+
     public String getRequirement() {
         return requirement;
     }
@@ -51,5 +53,13 @@ public class ChatGenerateRequest {
 
     public void setConversationId(Long conversationId) {
         this.conversationId = conversationId;
+    }
+
+    public String getFileContent() {
+        return fileContent;
+    }
+
+    public void setFileContent(String fileContent) {
+        this.fileContent = fileContent;
     }
 }

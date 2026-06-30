@@ -3,8 +3,10 @@ package com.nun.aitestcase.controller;
 import com.nun.aitestcase.common.ApiResponse;
 import com.nun.aitestcase.dto.ChatGenerateRequest;
 import com.nun.aitestcase.dto.QuestionGenerateRequest;
+import com.nun.aitestcase.mapper.UserMapper;
 import com.nun.aitestcase.service.ConversationService;
 import com.nun.aitestcase.service.ai.ChatGenerationService;
+import com.nun.aitestcase.service.ai.DeepSeekClient;
 import com.nun.aitestcase.service.ai.QuestionGenerationService;
 import com.nun.aitestcase.vo.GeneratedPlanVO;
 import com.nun.aitestcase.vo.GeneratedQuestionResponseVO;
@@ -22,31 +24,54 @@ public class ChatController {
     private final ChatGenerationService chatGenerationService;
     private final QuestionGenerationService questionGenerationService;
     private final ConversationService conversationService;
+    private final UserMapper userMapper;
 
     public ChatController(ChatGenerationService chatGenerationService,
                           QuestionGenerationService questionGenerationService,
-                          ConversationService conversationService) {
+                          ConversationService conversationService,
+                          UserMapper userMapper) {
         this.chatGenerationService = chatGenerationService;
         this.questionGenerationService = questionGenerationService;
         this.conversationService = conversationService;
+        this.userMapper = userMapper;
+    }
+
+    private void loadUserApiKey(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId != null) {
+            com.nun.aitestcase.entity.User user = userMapper.selectById(userId);
+            if (user != null && user.getApiKey() != null && !user.getApiKey().isBlank()) {
+                DeepSeekClient.setUserApiKey(user.getApiKey());
+            }
+        }
     }
 
     @PostMapping("/questions")
     public ApiResponse<GeneratedQuestionResponseVO> questions(
             @Valid @RequestBody QuestionGenerateRequest request,
             HttpServletRequest httpRequest) {
-        GeneratedQuestionResponseVO result = questionGenerationService.generate(request);
-        saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, null);
-        return ApiResponse.success(result);
+        loadUserApiKey(httpRequest);
+        try {
+            GeneratedQuestionResponseVO result = questionGenerationService.generate(request);
+            saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, null);
+            return ApiResponse.success(result);
+        } finally {
+            DeepSeekClient.clearUserApiKey();
+        }
     }
 
     @PostMapping("/generate")
     public ApiResponse<GeneratedPlanVO> generate(
             @Valid @RequestBody ChatGenerateRequest request,
             HttpServletRequest httpRequest) {
-        GeneratedPlanVO result = chatGenerationService.generate(request);
-        saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, request.getAnswers());
-        return ApiResponse.success(result);
+        loadUserApiKey(httpRequest);
+        try {
+            GeneratedPlanVO result = chatGenerationService.generate(request);
+            saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, request.getAnswers());
+            return ApiResponse.success(result);
+        } finally {
+            DeepSeekClient.clearUserApiKey();
+        }
     }
 
     private void saveChatContext(HttpServletRequest request, Long conversationId,
