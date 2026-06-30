@@ -1,0 +1,175 @@
+page {
+  --color-bg: #fbfbfd;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f7f7ff;
+  --color-text: #17171d;
+  --color-heading: #111116;
+  --color-muted: #7a7d8d;
+  --color-border: #e8e8f0;
+  --color-border-strong: #d9d9e8;
+  --color-primary: #6266f5;
+  --color-primary-soft: #f1f0ff;
+  --radius: 8px;
+  --shadow-light: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --shadow-soft: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
+  box-sizing: border-box;
+}
+
+page, view, text, input, button, image {
+  box-sizing: border-box;
+}
+
+page {
+  background: var(--color-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+/* ===== Nav bar (custom) ===== */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  padding: 48px 20px 12px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back {
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-surface-soft);
+  border-radius: 8px;
+  font-size: 18px;
+  color: var(--color-text);
+  margin-right: 12px;
+}
+
+.nav-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+  width: 100%;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #6c63ff, #a855f7);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(108,99,255,0.25);
+  transition: all 0.2s;
+}
+
+.btn-primary:active {
+  box-shadow: 0 4px 14px rgba(108,99,255,0.35);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-ghost:active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+/* ===== Form ===== */
+.form-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(98,102,245,0.1);
+}
+
+.form-input::placeholder {
+  color: var(--color-muted);
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin-bottom: 6px;
+}
+
+/* ===== Card ===== */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-light);
+  transition: box-shadow 0.2s;
+}
+
+/* ===== Loading ===== */
+.loading-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  z-index: 999;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  background: var(--color-surface);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Empty state ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--color-muted);
+}

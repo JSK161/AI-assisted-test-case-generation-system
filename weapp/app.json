@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/chat/chat",
+    "pages/history/history",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/register/register"
+  ],
+  "tabBar": {
+    "color": "#7a7d8d",
+    "selectedColor": "#6266f5",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/chat/chat", "text": "AI 对话", "iconPath": "images/tab_chat.png", "selectedIconPath": "images/tab_chat_hl.png" },
+      { "pagePath": "pages/history/history", "text": "历史", "iconPath": "images/tab_history.png", "selectedIconPath": "images/tab_history_hl.png" },
+      { "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "images/tab_profile.png", "selectedIconPath": "images/tab_profile_hl.png" }
+    ]
+  },
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#fbfbfd",
+    "backgroundColorTop": "#fbfbfd",
+    "backgroundColorBottom": "#fbfbfd"
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

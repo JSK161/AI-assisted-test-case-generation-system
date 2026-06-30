@@ -1,0 +1,149 @@
+<view class="chat-page">
+
+  <!-- Nav -->
+  <view class="chat-nav">
+    <view class="nav-left" bindtap="goHome">
+      <text class="nav-logo">✦</text>
+      <text class="nav-brand">测例 AI</text>
+    </view>
+    <view class="nav-right">
+      <text class="nav-user" bindtap="goProfile">{{userName}}</text>
+      <text class="nav-icon" bindtap="goProfile">👤</text>
+    </view>
+  </view>
+
+  <!-- ===== HOME STAGE ===== -->
+  <block wx:if="{{stage === 'home'}}">
+    <scroll-view class="home-scroll" scroll-y>
+      <view class="home-hero">
+        <text class="super-label">超级智能体 <text style="color:var(--color-primary)">✦</text></text>
+        <text class="hero-heading">下午好</text>
+        <text class="hero-sub">我能如何帮助您？</text>
+
+        <!-- Composer -->
+        <view class="composer">
+          <textarea class="composer-input" placeholder="描述要测试的模块或功能，如&quot;我想测试登录模块&quot;" value="{{requirement}}" bindinput="onRequirementInput" auto-height maxlength="8000" />
+          <view class="composer-toolbar">
+            <view class="composer-actions">
+              <text class="file-btn" bindtap="chooseFile">📎</text>
+              <text wx:if="{{fileName}}" class="file-tag" bindtap="clearFile">{{fileName}} ✕</text>
+            </view>
+            <view class="composer-right">
+              <input class="url-input" placeholder="可选 URL" value="{{referenceUrl}}" bindinput="onUrlInput" />
+              <view class="send-btn {{!requirement.trim() && !fileContent ? 'disabled' : ''}}" bindtap="startConversation">
+                <text>➤</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- Categories -->
+        <view class="categories">
+          <view wx:for="{{categories}}" wx:key="index" class="cate-item" bindtap="pickCategory" data-index="{{index}}">
+            <view class="cate-icon" style="background:{{item.color}}">{{item.icon}}</view>
+            <text class="cate-label">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+
+  <!-- ===== QUESTIONS STAGE ===== -->
+  <block wx:elif="{{stage === 'questions'}}">
+    <view class="question-page">
+      <scroll-view class="question-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+        <!-- Messages -->
+        <view wx:for="{{messages}}" wx:key="id" class="msg-row {{item.sender === 'user' ? 'user' : 'assistant'}}">
+          <view class="msg-content">
+            <text wx:if="{{item.sender === 'assistant'}}" class="msg-role">AI</text>
+            <text class="msg-text">{{item.content}}</text>
+          </view>
+        </view>
+
+        <!-- Current question card -->
+        <view wx:if="{{currentQuestion}}" class="question-card">
+          <view class="q-header">
+            <text class="q-count">{{currentIndex + 1}} / {{totalQuestions}}</text>
+            <text class="q-title">{{currentQuestion.title}}</text>
+          </view>
+
+          <view class="q-options" wx:if="{{currentQuestion.type === 'choice' || currentQuestion.type === 'multiple'}}">
+            <label wx:for="{{currentQuestion.options}}" wx:key="value" class="q-option {{selectedValues.indexOf(item.value) > -1 ? 'checked' : ''}}">
+              <checkbox value="{{item.value}}" checked="{{selectedValues.indexOf(item.value) > -1}}" bindchange="toggleOption" />
+              <view class="q-option-text">
+                <text class="q-opt-label">{{item.label}}</text>
+                <text class="q-opt-desc">{{item.description}}</text>
+              </view>
+            </label>
+          </view>
+
+          <view class="q-textarea" wx:elif="{{currentQuestion.type === 'text'}}">
+            <textarea class="form-input" placeholder="请输入..." value="{{customText}}" bindinput="onCustomText" auto-height />
+          </view>
+
+          <view class="q-footer">
+            <text class="skip-btn" bindtap="skipQuestion">跳过</text>
+            <view class="next-btn {{!canProceed ? 'disabled' : ''}}" bindtap="submitAnswer">
+              <text>{{currentQuestion.id === 'confirm' ? '开始生成方案' : '下一步'}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </block>
+
+  <!-- ===== RESULT STAGE ===== -->
+  <block wx:elif="{{stage === 'result'}}">
+    <view class="result-page">
+      <scroll-view class="result-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+        <view class="result-doc">
+          <view class="doc-toolbar">
+            <view>
+              <text class="doc-title">{{planData?.title || '测试方案'}}</text>
+              <text class="doc-meta">{{planData?.summary || ''}}</text>
+            </view>
+            <view class="doc-actions">
+              <text class="doc-btn" bindtap="copyPlan">📋</text>
+              <text class="doc-btn" bindtap="downloadPlan">⬇</text>
+            </view>
+          </view>
+
+          <!-- Scope -->
+          <view class="doc-section">
+            <text class="doc-section-title">1. 被测对象与范围</text>
+            <view class="scope-table">
+              <view wx:for="{{planData?.scope || []}}" wx:key="*this" class="scope-row">
+                <text class="scope-key">{{item.split('：')[0]}}</text>
+                <text class="scope-val">{{item.includes('：') ? item.split('：').slice(1).join('：') : item}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- Test Cases -->
+          <view class="doc-section">
+            <text class="doc-section-title">2. 测试用例</text>
+            <view wx:for="{{planData?.testCases || []}}" wx:key="id" class="testcase-block">
+              <view class="case-title">
+                <text class="case-id">{{item.id}}</text>
+                <text class="case-name">{{item.title}}</text>
+                <text class="case-priority">{{item.priority}}</text>
+              </view>
+              <text class="case-line"><text class="case-label">类型：</text>{{item.category}}</text>
+              <text class="case-line"><text class="case-label">前置条件：</text>{{item.precondition}}</text>
+              <view class="case-steps">
+                <text wx:for="{{item.steps}}" wx:key="*this" class="case-step">{{index + 1}}. {{item}}</text>
+              </view>
+              <text class="case-line"><text class="case-label">预期结果：</text>{{item.expectedResult}}</text>
+            </view>
+          </view>
+
+          <!-- Risks -->
+          <view class="doc-section">
+            <text class="doc-section-title">3. 风险提示</text>
+            <view wx:for="{{planData?.risks || []}}" wx:key="*this" class="risk-item">⚠ {{item}}</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </block>
+</view>
