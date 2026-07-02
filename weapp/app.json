@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/chat/chat",
+    "pages/history/history",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/register/register"
+  ],
+  "tabBar": {
+    "color": "#7a7d8d",
+    "selectedColor": "#6266f5",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/chat/chat", "text": "AI 对话" },
+      { "pagePath": "pages/history/history", "text": "历史" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#fbfbfd",
+    "backgroundColorTop": "#fbfbfd",
+    "backgroundColorBottom": "#fbfbfd"
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

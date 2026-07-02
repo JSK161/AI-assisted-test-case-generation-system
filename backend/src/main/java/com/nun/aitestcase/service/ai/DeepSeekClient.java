@@ -18,6 +18,7 @@ public class DeepSeekClient {
     private final DeepSeekProperties properties;
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
+    private static final ThreadLocal<String> userApiKeyHolder = new ThreadLocal<>();
 
     public DeepSeekClient(DeepSeekProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
@@ -25,11 +26,31 @@ public class DeepSeekClient {
         this.restClient = RestClient.builder().build();
     }
 
+    public static void setUserApiKey(String apiKey) {
+        userApiKeyHolder.set(apiKey);
+    }
+
+    public static void clearUserApiKey() {
+        userApiKeyHolder.remove();
+    }
+
+    public static boolean hasUserApiKey() {
+        return StringUtils.hasText(userApiKeyHolder.get());
+    }
+
+    private String resolveApiKey() {
+        String userKey = userApiKeyHolder.get();
+        if (StringUtils.hasText(userKey)) return userKey;
+        return properties.getApiKey();
+    }
+
     public String generateTestCases(String prompt) {
-        if (properties.isMockEnabled()) {
+        String apiKey = resolveApiKey();
+        // Skip mock if user has their own API key
+        if (properties.isMockEnabled() && !StringUtils.hasText(userApiKeyHolder.get())) {
             return mockResponse();
         }
-        if (!StringUtils.hasText(properties.getApiKey())) {
+        if (!StringUtils.hasText(apiKey)) {
             throw new BusinessException("DeepSeek API key is not configured");
         }
 
@@ -45,7 +66,7 @@ public class DeepSeekClient {
         String rawResponse = restClient.post()
                 .uri(properties.getBaseUrl() + "/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + properties.getApiKey())
+                .header("Authorization", "Bearer " + resolveApiKey())
                 .body(body)
                 .retrieve()
                 .body(String.class);

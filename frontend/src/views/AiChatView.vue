@@ -1,26 +1,5 @@
 <template>
   <main class="ai-page">
-    <header class="ai-header">
-      <div class="brand-lockup" aria-label="AI辅助测试用例生成系统">
-        <div class="brand-icon">
-          <Sparkles :size="20" />
-        </div>
-        <strong>测例 AI</strong>
-        <span>AI辅助测试用例生成系统</span>
-      </div>
-
-      <div class="header-actions">
-        <button class="credit-pill" type="button">
-          <Sparkle :size="16" />
-          <span>100</span>
-        </button>
-        <button class="ghost-button" type="button" @click="resetSession">
-          <RefreshCw :size="16" />
-          新会话
-        </button>
-      </div>
-    </header>
-
     <section v-if="stage === 'home'" class="home-stage">
       <p class="super-label">产品团队 <span>超级智能体</span></p>
       <h1>下午好，我能如何帮助您</h1>
@@ -36,7 +15,7 @@
           v-model="requirementInput"
           class="hero-textarea"
           rows="5"
-          placeholder="请描述功能需求或模块，例如：我想测试登录模块，需要覆盖账号密码、验证码和异常提示..."
+          placeholder='描述要测试的模块或功能，如"我想测试登录模块"'
           @keydown.enter.exact.prevent="startConversation"
         />
         <div class="composer-toolbar">
@@ -45,10 +24,23 @@
             极速
             <ChevronDown :size="15" />
           </button>
-          <label class="url-field">
+          <div class="url-field">
             <LinkIcon :size="17" />
-            <input v-model="referenceUrl" type="url" placeholder="可选：粘贴需求页面或案例 URL" />
-          </label>
+            <template v-if="uploadedFileName">
+              <span class="file-indicator" @click="clearUploadedFile">
+                <Paperclip :size="14" />
+                {{ uploadedFileName }}
+                <X :size="13" />
+              </span>
+            </template>
+            <template v-else>
+              <input v-model="referenceUrl" type="url" placeholder="可选：粘贴需求页面或案例 URL" />
+              <label class="file-btn" title="上传文件">
+                <Paperclip :size="16" />
+                <input ref="fileInputRef" type="file" hidden @change="handleFileUpload" />
+              </label>
+            </template>
+          </div>
           <button class="send-button" type="button" :disabled="!requirementInput.trim()" @click="startConversation">
             <ArrowUp :size="21" />
           </button>
@@ -96,6 +88,10 @@
           <button type="button" @click="copyResult">
             <Copy :size="16" />
             复制方案
+          </button>
+          <button type="button" @click="downloadWord">
+            <Download :size="16" />
+            下载 Word
           </button>
           <button type="button" @click="downloadMarkdown">
             <Download :size="16" />
@@ -336,7 +332,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AlertTriangle,
   ArrowUp,
@@ -355,10 +352,10 @@ import {
   List,
   ListOrdered,
   Network,
+  Paperclip,
   RefreshCw,
   Shield,
   ShieldCheck,
-  Sparkle,
   Sparkles,
   Target,
   TestTubeDiagonal,
@@ -368,6 +365,8 @@ import {
 } from '@lucide/vue'
 import { ElMessage } from 'element-plus'
 import { generateChatPlan, generateClarifyingQuestions } from '@/api/chat'
+import { createConversation, addMessage, getConversation } from '@/api/conversation'
+import mammoth from 'mammoth'
 import type { ChatAnswer, ChatMessage, ClarificationQuestion, GeneratedPlan } from '@/types/chat'
 import {
   appendConfirmQuestion,
@@ -397,11 +396,17 @@ const categories: CategoryItem[] = [
   { label: '研发测试', prompt: '请生成研发自测用例方案', color: '#ffad42', icon: Bot }
 ]
 
+const route = useRoute()
+const router = useRouter()
+
 const stage = ref<Stage>('home')
 const selectedCategory = ref('研发测试')
-const requirementInput = ref('我想测试登录模块')
+const requirementInput = ref('')
 const referenceUrl = ref('')
 const followUpInput = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFileName = ref('')
+const uploadedFileContent = ref('')
 const answers = ref<ChatAnswer[]>([])
 const selectedValues = ref<string[]>([])
 const customText = ref('')
@@ -411,6 +416,8 @@ const usedModel = ref('AI 生成')
 const questionModel = ref('DeepSeek')
 const questions = ref<ClarificationQuestion[]>([])
 const isPreparingQuestions = ref(false)
+const conversationId = ref<number | null>(null)
+const isLoadingConversation = ref(false)
 
 const totalQuestions = computed(() => questions.value.length)
 const currentQuestion = computed<ClarificationQuestion | null>(() => getNextQuestion(questions.value, answers.value))
@@ -419,32 +426,135 @@ const canProceed = computed(() => currentQuestion.value?.id === 'confirm' || sel
 const answerSummary = computed(() => buildAnswerSummary(questions.value, answers.value))
 const sessionTitle = computed(() => `${extractTitle(requirementInput.value)}-test-cases`)
 
+onMounted(async () => {
+  const id = route.query.conversationId
+  if (id && !isNaN(Number(id))) {
+    await loadConversation(Number(id))
+  }
+})
+
+async function loadConversation(id: number) {
+  isLoadingConversation.value = true
+  try {
+    const detail = await getConversation(id)
+    conversationId.value = id
+    requirementInput.value = detail.requirement || ''
+    messages.value = (detail.messages || []).map((m: any) => ({
+      id: m.id.toString(),
+      sender: m.sender as 'user' | 'assistant',
+      content: m.content,
+      createdAt: m.createdAt
+    }))
+
+    if (detail.answers) {
+      answers.value = Array.isArray(detail.answers) ? detail.answers : []
+    }
+    if (detail.generatedPlan) {
+      generatedPlan.value = detail.generatedPlan as GeneratedPlan
+      stage.value = 'result'
+    } else {
+      // No plan yet — show conversation in home mode for further editing
+      generatedPlan.value = null
+      stage.value = 'home'
+    }
+    ElMessage.success('已加载对话')
+  } catch {
+    ElMessage.error('加载对话失败')
+  } finally {
+    isLoadingConversation.value = false
+  }
+}
+
 function applyCategory(item: CategoryItem) {
   selectedCategory.value = item.label
   requirementInput.value = item.prompt
+  // Auto focus the textarea after selecting a category
+  setTimeout(() => {
+    const textarea = document.querySelector('.hero-textarea') as HTMLTextAreaElement
+    textarea?.focus()
+  }, 0)
+}
+
+function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const textExts = ['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'csv', 'html', 'css', 'js', 'ts', 'vue', 'java', 'py', 'sql']
+  const wordExts = ['docx']
+
+  if (wordExts.includes(ext || '')) {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer
+      try {
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        uploadedFileContent.value = result.value
+        uploadedFileName.value = file.name
+        ElMessage.success(`已附加 ${file.name}`)
+      } catch {
+        ElMessage.error('解析 Word 文档失败')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  } else if (ext && textExts.includes(ext)) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      uploadedFileContent.value = e.target?.result as string
+      uploadedFileName.value = file.name
+      ElMessage.success(`已附加 ${file.name}`)
+    }
+    reader.readAsText(file, 'utf-8')
+  } else {
+    ElMessage.warning('仅支持文本文件（.txt, .md, .json）和 Word 文档（.docx）')
+  }
+  input.value = ''
+}
+
+function clearUploadedFile() {
+  uploadedFileName.value = ''
+  uploadedFileContent.value = ''
 }
 
 async function startConversation() {
   const requirement = requirementInput.value.trim()
-  if (!requirement) {
-    ElMessage.warning('请先描述要测试的模块或功能')
+  if (!requirement && !uploadedFileContent.value) {
+    ElMessage.warning('请先描述要测试的模块或功能，或上传文件')
     return
   }
+  // Build full requirement: user text + file content (if any)
+  let fullRequirement = requirement
+  conversationId.value = null
   stage.value = 'questions'
   generatedPlan.value = null
   usedModel.value = 'AI 生成'
   messages.value = [
-    createMessage('user', requirement),
+    createMessage('user', (uploadedFileName.value ? `[文件：${uploadedFileName.value}] ` : '') + (requirement || '已上传文件，请根据文件内容生成测试方案')),
     createMessage('assistant', '我先根据你的模块生成几个补充问题，然后再按你的选择生成测试用例。')
   ]
   answers.value = []
   questions.value = []
   isPreparingQuestions.value = true
 
+  // Create conversation and save initial user message
+  try {
+    const title = (requirement || uploadedFileName.value).length > 50
+      ? (requirement || uploadedFileName.value).substring(0, 50) + '...'
+      : (requirement || uploadedFileName.value)
+    const conv = await createConversation(title, fullRequirement)
+    conversationId.value = conv.id
+    await addMessage(conv.id, 'user', requirement || `（已附加文件：${uploadedFileName.value}）`)
+  } catch {
+    // continue without persistence
+  }
+
   try {
     const result = await generateClarifyingQuestions({
-      requirement,
-      referenceUrl: referenceUrl.value.trim() || undefined
+      requirement: requirement,
+      referenceUrl: referenceUrl.value.trim() || undefined,
+      conversationId: conversationId.value || undefined,
+      fileContent: uploadedFileContent.value || undefined
     })
     questions.value = appendConfirmQuestion(result.questions || [])
     questionModel.value = result.usedModel || 'DeepSeek'
@@ -523,25 +633,32 @@ function skipQuestion() {
 async function generatePlan() {
   stage.value = 'result'
   messages.value.push(createMessage('assistant', '我已开始整理测试范围、风险点和结构化测试用例。'))
+  let fullRequirement = requirementInput.value
+  if (uploadedFileContent.value) {
+    fullRequirement += '\n\n【附加文件 ' + uploadedFileName.value + ' 的内容】\n' + uploadedFileContent.value
+  }
   try {
     const result = await generateChatPlan({
       requirement: requirementInput.value,
       answers: answers.value,
-      referenceUrl: referenceUrl.value.trim() || undefined
+      referenceUrl: referenceUrl.value.trim() || undefined,
+      conversationId: conversationId.value || undefined,
+      fileContent: uploadedFileContent.value || undefined
     })
     generatedPlan.value = result
     usedModel.value = result.usedModel || 'DeepSeek'
   } catch {
-    generatedPlan.value = createMockGeneratedPlan(requirementInput.value, questions.value, answers.value)
+    generatedPlan.value = createMockGeneratedPlan(fullRequirement, questions.value, answers.value)
     usedModel.value = '本地预览'
   }
 }
 
-function sendFollowUp() {
+async function sendFollowUp() {
   if (!followUpInput.value.trim()) {
     return
   }
-  messages.value.push(createMessage('user', followUpInput.value.trim()))
+  const content = followUpInput.value.trim()
+  messages.value.push(createMessage('user', content))
   messages.value.push(createMessage('assistant', '已收到补充说明，您可以重新生成或手动复制当前方案继续完善。'))
   followUpInput.value = ''
 }
@@ -567,6 +684,64 @@ function downloadMarkdown() {
   URL.revokeObjectURL(url)
 }
 
+async function downloadWord() {
+  if (!generatedPlan.value) return
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle, HeadingLevel } = await import('docx')
+
+  const plan = generatedPlan.value
+  const rows: any[] = []
+
+  // Header row
+  rows.push(new TableRow({
+    tableHeader: true,
+    children: ['ID', '标题', '优先级', '类型', '前置条件', '步骤', '预期结果'].map(h =>
+      new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 20 })], alignment: AlignmentType.CENTER })], width: { size: h === '步骤' ? 2000 : 1200, type: WidthType.DXA } })
+    )
+  }))
+
+  // Data rows
+  for (const tc of plan.testCases || []) {
+    rows.push(new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph(tc.id)] }),
+        new TableCell({ children: [new Paragraph(tc.title)] }),
+        new TableCell({ children: [new Paragraph(tc.priority)] }),
+        new TableCell({ children: [new Paragraph(tc.category)] }),
+        new TableCell({ children: [new Paragraph(tc.precondition)] }),
+        new TableCell({ children: (tc.steps || []).map((s: string, i: number) => new Paragraph(`${i + 1}. ${s}`)) }),
+        new TableCell({ children: [new Paragraph(tc.expectedResult)] })
+      ]
+    }))
+  }
+
+  const doc = new Document({
+    sections: [{
+      children: [
+        new Paragraph({ text: plan.title || '测试方案', heading: HeadingLevel.HEADING_1 }),
+        new Paragraph({ text: plan.summary || '', spacing: { after: 200 } }),
+        new Paragraph({ text: '一、被测对象与范围', heading: HeadingLevel.HEADING_2 }),
+        ...(plan.scope || []).map(s => new Paragraph({
+          children: [new TextRun({ text: s, size: 22 })],
+          spacing: { after: 100 }
+        })),
+        new Paragraph({ text: '二、测试用例', heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
+        new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }),
+        new Paragraph({ text: '三、风险提示', heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
+        ...(plan.risks || []).map(r => new Paragraph({ text: `⚠ ${r}`, spacing: { after: 80 } }))
+      ]
+    }]
+  })
+
+  const blob = await Packer.toBlob(doc)
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${sessionTitle.value}.docx`
+  link.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('Word 文档已下载')
+}
+
 function resetSession() {
   stage.value = 'home'
   answers.value = []
@@ -576,6 +751,8 @@ function resetSession() {
   questionModel.value = 'DeepSeek'
   isPreparingQuestions.value = false
   usedModel.value = 'AI 生成'
+  uploadedFileName.value = ''
+  uploadedFileContent.value = ''
   resetQuestionState()
 }
 

@@ -33,12 +33,12 @@ public class QuestionGenerationService {
     }
 
     public GeneratedQuestionResponseVO generate(QuestionGenerateRequest request) {
-        if (properties.isMockEnabled()) {
+        if (properties.isMockEnabled() && !DeepSeekClient.hasUserApiKey()) {
             return createPreviewQuestions(request.getRequirement());
         }
 
         String referenceContent = urlContentFetcher.fetch(request.getReferenceUrl());
-        String prompt = promptBuilder.build(request.getRequirement(), referenceContent);
+        String prompt = promptBuilder.build(request.getRequirement(), request.getFileContent(), referenceContent);
         String content = deepSeekClient.generateTestCases(prompt);
         return questionParser.parse(content, properties.getModel());
     }

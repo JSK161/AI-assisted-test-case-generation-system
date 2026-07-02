@@ -10,7 +10,7 @@ class QuestionPromptBuilderTest {
     void buildsPromptAskingDeepSeekForRequirementSpecificQuestions() {
         QuestionPromptBuilder builder = new QuestionPromptBuilder();
 
-        String prompt = builder.build("我想测试订单退款模块", "退款规则：原路退回，超过 24 小时需要人工审核。");
+        String prompt = builder.build("我想测试订单退款模块", null, "退款规则：原路退回，超过 24 小时需要人工审核。");
 
         assertTrue(prompt.contains("订单退款模块"));
         assertTrue(prompt.contains("原路退回"));

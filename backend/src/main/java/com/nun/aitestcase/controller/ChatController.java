@@ -3,10 +3,14 @@ package com.nun.aitestcase.controller;
 import com.nun.aitestcase.common.ApiResponse;
 import com.nun.aitestcase.dto.ChatGenerateRequest;
 import com.nun.aitestcase.dto.QuestionGenerateRequest;
+import com.nun.aitestcase.mapper.UserMapper;
+import com.nun.aitestcase.service.ConversationService;
 import com.nun.aitestcase.service.ai.ChatGenerationService;
+import com.nun.aitestcase.service.ai.DeepSeekClient;
 import com.nun.aitestcase.service.ai.QuestionGenerationService;
-import com.nun.aitestcase.vo.GeneratedQuestionResponseVO;
 import com.nun.aitestcase.vo.GeneratedPlanVO;
+import com.nun.aitestcase.vo.GeneratedQuestionResponseVO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,19 +23,84 @@ public class ChatController {
 
     private final ChatGenerationService chatGenerationService;
     private final QuestionGenerationService questionGenerationService;
+    private final ConversationService conversationService;
+    private final UserMapper userMapper;
 
-    public ChatController(ChatGenerationService chatGenerationService, QuestionGenerationService questionGenerationService) {
+    public ChatController(ChatGenerationService chatGenerationService,
+                          QuestionGenerationService questionGenerationService,
+                          ConversationService conversationService,
+                          UserMapper userMapper) {
         this.chatGenerationService = chatGenerationService;
         this.questionGenerationService = questionGenerationService;
+        this.conversationService = conversationService;
+        this.userMapper = userMapper;
+    }
+
+    private void loadUserApiKey(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId != null) {
+            com.nun.aitestcase.entity.User user = userMapper.selectById(userId);
+            if (user != null && user.getApiKey() != null && !user.getApiKey().isBlank()) {
+                DeepSeekClient.setUserApiKey(user.getApiKey());
+            }
+        }
     }
 
     @PostMapping("/questions")
-    public ApiResponse<GeneratedQuestionResponseVO> questions(@Valid @RequestBody QuestionGenerateRequest request) {
-        return ApiResponse.success(questionGenerationService.generate(request));
+    public ApiResponse<GeneratedQuestionResponseVO> questions(
+            @Valid @RequestBody QuestionGenerateRequest request,
+            HttpServletRequest httpRequest) {
+        loadUserApiKey(httpRequest);
+        try {
+            GeneratedQuestionResponseVO result = questionGenerationService.generate(request);
+            saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, null);
+            return ApiResponse.success(result);
+        } finally {
+            DeepSeekClient.clearUserApiKey();
+        }
     }
 
     @PostMapping("/generate")
-    public ApiResponse<GeneratedPlanVO> generate(@Valid @RequestBody ChatGenerateRequest request) {
-        return ApiResponse.success(chatGenerationService.generate(request));
+    public ApiResponse<GeneratedPlanVO> generate(
+            @Valid @RequestBody ChatGenerateRequest request,
+            HttpServletRequest httpRequest) {
+        loadUserApiKey(httpRequest);
+        try {
+            GeneratedPlanVO result = chatGenerationService.generate(request);
+            saveChatContext(httpRequest, request.getConversationId(), request.getRequirement(), result, request.getAnswers());
+            return ApiResponse.success(result);
+        } finally {
+            DeepSeekClient.clearUserApiKey();
+        }
+    }
+
+    private void saveChatContext(HttpServletRequest request, Long conversationId,
+                                  String requirement, Object result, Object answers) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) return;
+        try {
+            if (conversationId == null) {
+                conversationId = conversationService.create(userId,
+                        requirement.length() > 50 ? requirement.substring(0, 50) + "..." : requirement,
+                        requirement);
+                conversationService.addMessage(conversationId, userId, "user", requirement);
+            }
+            if (result instanceof GeneratedQuestionResponseVO) {
+                GeneratedQuestionResponseVO qr = (GeneratedQuestionResponseVO) result;
+                String msg = "已根据您的需求生成" + (qr.getQuestions() != null ? qr.getQuestions().size() : 0) + "个补充问题";
+                conversationService.addMessage(conversationId, userId, "assistant", msg);
+                if (answers != null) {
+                    conversationService.updateAnswers(conversationId, userId, answers);
+                }
+            } else if (result instanceof GeneratedPlanVO) {
+                conversationService.addMessage(conversationId, userId, "assistant", "测试方案已生成");
+                conversationService.updatePlan(conversationId, userId, result);
+                if (answers != null) {
+                    conversationService.updateAnswers(conversationId, userId, answers);
+                }
+            }
+        } catch (Exception ignored) {
+            System.err.println("saveChatContext error: " + ignored.getMessage());
+        }
     }
 }

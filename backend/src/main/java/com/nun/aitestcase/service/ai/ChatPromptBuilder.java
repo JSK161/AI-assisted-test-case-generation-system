@@ -10,11 +10,14 @@ import java.util.stream.Collectors;
 @Component
 public class ChatPromptBuilder {
 
-    public String build(String requirement, List<ChatAnswerDTO> answers, String referenceContent) {
+    public String build(String requirement, List<ChatAnswerDTO> answers, String fileContent, String referenceContent) {
         String answerText = summarizeAnswers(answers);
         String referenceText = StringUtils.hasText(referenceContent)
                 ? referenceContent
                 : "用户没有提供可读取的参考页面内容。";
+        String fileText = StringUtils.hasText(fileContent)
+                ? "\n\n用户上传的文档内容（请仔细阅读并基于此生成测试方案）：\n" + fileContent
+                : "";
 
         return """
                 你是一名资深软件测试工程师，请根据用户需求生成结构化测试用例方案。
@@ -45,6 +48,7 @@ public class ChatPromptBuilder {
                 3. 优先级使用 P0、P1、P2，其中核心功能和安全问题用 P0/P1。
                 4. 如果用户信息不足，主动按通用软件测试经验补齐合理假设。
                 5. 如果参考页面内容里有约束、案例或规则，要吸收进 scope、risks 和 testCases。
+                6. 如果用户上传了文档，请先分析文档内容再生成方案。
 
                 用户需求：
                 %s
@@ -54,7 +58,7 @@ public class ChatPromptBuilder {
 
                 参考页面内容：
                 %s
-                """.formatted(requirement, answerText, referenceText);
+                """.formatted(requirement + fileText, answerText, referenceText);
     }
 
     public String summarizeAnswers(List<ChatAnswerDTO> answers) {

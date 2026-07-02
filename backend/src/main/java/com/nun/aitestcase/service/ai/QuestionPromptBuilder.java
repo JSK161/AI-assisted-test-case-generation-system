@@ -6,10 +6,13 @@ import org.springframework.util.StringUtils;
 @Component
 public class QuestionPromptBuilder {
 
-    public String build(String requirement, String referenceContent) {
+    public String build(String requirement, String fileContent, String referenceContent) {
         String referenceText = StringUtils.hasText(referenceContent)
                 ? referenceContent
                 : "用户没有提供可读取的参考页面内容。";
+        String fileText = StringUtils.hasText(fileContent)
+                ? "\n\n用户上传的文档内容（请仔细阅读并基于此分析）：\n" + fileContent
+                : "";
 
         return """
                 你是一名资深软件测试工程师。用户会告诉你“想测试某个模块/功能/接口”，你的任务不是直接生成测试用例，而是先像测试专家一样反问用户，补齐生成测试用例所需的关键信息。
@@ -48,6 +51,6 @@ public class QuestionPromptBuilder {
 
                 参考页面内容：
                 %s
-                """.formatted(requirement, referenceText);
+                """.formatted(requirement + fileText, referenceText);
     }
 }

@@ -1,0 +1,27 @@
+<view class="auth-page" style="padding-top:{{statusBarHeight + 20}}px;">
+  <view class="auth-card">
+    <view class="auth-header">
+      <view class="brand-icon"><text>✦</text></view>
+      <text class="auth-title">注册</text>
+      <text class="auth-subtitle">创建您的 AI 测试助手账号</text>
+    </view>
+
+    <view class="auth-form">
+      <view class="form-group">
+        <input class="form-input" placeholder="用户名（3-50个字符）" value="{{username}}" bindinput="onInput" data-field="username" />
+      </view>
+      <view class="form-group">
+        <input class="form-input" password placeholder="密码（至少6位）" value="{{password}}" bindinput="onInput" data-field="password" />
+      </view>
+      <view class="form-group">
+        <input class="form-input" placeholder="邮箱（选填）" type="email" value="{{email}}" bindinput="onInput" data-field="email" />
+      </view>
+      <button class="btn-primary" loading="{{loading}}" bindtap="handleRegister">注 册</button>
+    </view>
+
+    <view class="auth-footer">
+      <text>已有账号？</text>
+      <navigator url="/pages/login/login" class="auth-link">立即登录</navigator>
+    </view>
+  </view>
+</view>

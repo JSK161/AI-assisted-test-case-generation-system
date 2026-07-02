@@ -14,6 +14,8 @@ public class User {
     private String username;
     private String password;
     private String realName;
+    private String email;
+    private String apiKey;
     private String role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -57,6 +59,17 @@ public class User {
     public void setRole(String role) {
         this.role = role;
     }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getApiKey() { return apiKey; }
+    public void setApiKey(String apiKey) { this.apiKey = apiKey; }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

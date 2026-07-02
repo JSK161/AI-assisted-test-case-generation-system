@@ -1,0 +1,12 @@
+.page { min-height: 100vh; background: var(--color-bg); overflow-x: hidden; }
+.list-scroll { height: calc(100vh - 90px); padding: 12px 16px; overflow-y: auto; overflow-x: hidden; }
+.loading-state { padding: 20px; }
+.skeleton { height: 56px; margin-bottom: 8px; background: var(--color-surface-soft); border-radius: 10px; }
+
+.conv-list { display: flex; flex-direction: column; gap: 8px; }
+.conv-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.conv-icon { width: 36px; height: 36px; line-height: 36px; text-align: center; background: var(--color-primary-soft); border-radius: 8px; font-size: 16px; }
+.conv-content { flex: 1; min-width: 0; }
+.conv-title { display: block; font-size: 14px; font-weight: 500; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-time { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; }
+.conv-del { width: 28px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: #999; }

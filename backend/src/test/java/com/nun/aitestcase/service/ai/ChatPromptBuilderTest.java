@@ -18,7 +18,7 @@ class ChatPromptBuilderTest {
 
         ChatPromptBuilder builder = new ChatPromptBuilder();
 
-        String prompt = builder.build("我想测试登录模块", List.of(answer), "参考页面要求：账号连续失败 5 次锁定。");
+        String prompt = builder.build("我想测试登录模块", List.of(answer), null, "参考页面要求：账号连续失败 5 次锁定。");
 
         assertTrue(prompt.contains("我想测试登录模块"));
         assertTrue(prompt.contains("platform"));

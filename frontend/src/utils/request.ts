@@ -1,5 +1,7 @@
 import axios, { type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { authStore } from '@/stores/auth'
+import router from '@/router'
 
 interface ApiResponse<T> {
   code?: number
@@ -12,10 +14,25 @@ const request = axios.create({
   timeout: 60000
 })
 
+// Request interceptor — attach JWT token
+request.interceptors.request.use((config) => {
+  const token = authStore.token
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
+})
+
 request.interceptors.response.use(
   (response) => {
     const payload = response.data as ApiResponse<unknown>
     if (payload && payload.code && payload.code !== 200) {
+      if (payload.code === 401) {
+        authStore.logout()
+        router.push('/login')
+        ElMessage.error('登录已过期，请重新登录')
+        return Promise.reject(new Error('登录已过期'))
+      }
       if (!isSilentError(response.config.headers)) {
         ElMessage.error(payload.message || '请求失败')
       }
@@ -24,6 +41,12 @@ request.interceptors.response.use(
     return (payload?.data ?? payload) as unknown as AxiosResponse
   },
   (error) => {
+    if (error.response?.status === 401) {
+      authStore.logout()
+      router.push('/login')
+      ElMessage.error('登录已过期，请重新登录')
+      return Promise.reject(new Error('登录已过期'))
+    }
     const message = error.response?.data?.message || error.message || '服务暂时不可用'
     if (!isSilentError(error.config?.headers)) {
       ElMessage.error(message)

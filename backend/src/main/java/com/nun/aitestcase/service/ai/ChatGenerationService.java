@@ -34,12 +34,12 @@ public class ChatGenerationService {
     }
 
     public GeneratedPlanVO generate(ChatGenerateRequest request) {
-        if (properties.isMockEnabled()) {
+        if (properties.isMockEnabled() && !DeepSeekClient.hasUserApiKey()) {
             return createPreviewPlan(request, "本地预览");
         }
 
         String referenceContent = urlContentFetcher.fetch(request.getReferenceUrl());
-        String prompt = promptBuilder.build(request.getRequirement(), request.getAnswers(), referenceContent);
+        String prompt = promptBuilder.build(request.getRequirement(), request.getAnswers(), request.getFileContent(), referenceContent);
         String content = deepSeekClient.generateTestCases(prompt);
         return planParser.parse(content, request.getRequirement(), properties.getModel());
     }
