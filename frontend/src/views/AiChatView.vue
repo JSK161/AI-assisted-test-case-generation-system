@@ -179,55 +179,155 @@
         </article>
 
         <article v-if="stage === 'result' && generatedPlan" class="result-document">
-          <div class="document-toolbar">
-            <div>
-              <h2>{{ generatedPlan.title }}</h2>
-              <span>{{ usedModel }}</span>
-            </div>
-            <div>
-              <button type="button" @click="copyResult">
-                <Copy :size="16" />
-              </button>
-              <button type="button" @click="downloadMarkdown">
-                <Download :size="16" />
-              </button>
-            </div>
-          </div>
-
-          <section class="doc-section">
-            <h3>1. 被测对象与范围</h3>
-            <table class="scope-table">
-              <tbody>
-                <tr v-for="item in generatedPlan.scope" :key="item">
-                  <th>{{ item.split('：')[0] }}</th>
-                  <td>{{ item.includes('：') ? item.split('：').slice(1).join('：') : item }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-
-          <section class="doc-section">
-            <h3>2. 测试用例</h3>
-            <article v-for="testCase in generatedPlan.testCases" :key="testCase.id" class="testcase-block">
-              <div class="case-title">
-                <span>{{ testCase.id }}</span>
-                <strong>{{ testCase.title }}</strong>
-                <em>{{ testCase.priority }}</em>
+          <!-- 文档头部 -->
+          <header class="doc-header">
+            <div class="doc-header-content">
+              <div class="doc-title-section">
+                <div class="doc-icon">
+                  <FileCheck :size="24" />
+                </div>
+                <div class="doc-title-info">
+                  <h2>{{ generatedPlan.title }}</h2>
+                  <div class="doc-meta">
+                    <span class="meta-tag">
+                      <Sparkles :size="14" />
+                      {{ usedModel }}
+                    </span>
+                    <span class="meta-tag">
+                      <FileText :size="14" />
+                      {{ generatedPlan.testCases.length }} 条用例
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p><b>类型：</b>{{ testCase.category }}</p>
-              <p><b>前置条件：</b>{{ testCase.precondition }}</p>
-              <ol>
-                <li v-for="step in testCase.steps" :key="step">{{ step }}</li>
-              </ol>
-              <p><b>预期结果：</b>{{ testCase.expectedResult }}</p>
-            </article>
+              <div class="doc-actions">
+                <button class="action-btn" @click="copyResult" title="复制 Markdown 方案">
+                  <Copy :size="18" />
+                  <span>复制方案</span>
+                </button>
+                <button class="action-btn primary" @click="downloadMarkdown" title="导出 Markdown 文件">
+                  <Download :size="18" />
+                  <span>导出 Markdown</span>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- 被测对象与范围 -->
+          <section class="doc-section scope-section">
+            <div class="section-header">
+              <div class="section-icon-wrap scope-icon">
+                <Target :size="20" />
+              </div>
+              <h3>被测对象与范围</h3>
+            </div>
+            <div class="scope-grid">
+              <div 
+                v-for="(item, idx) in generatedPlan.scope" 
+                :key="idx" 
+                class="scope-card"
+                :style="{ '--card-delay': idx * 0.05 + 's' }"
+              >
+                <div class="scope-label">{{ item.split('：')[0] }}</div>
+                <div class="scope-value">{{ item.includes('：') ? item.split('：').slice(1).join('：') : item }}</div>
+              </div>
+            </div>
           </section>
 
-          <section class="doc-section">
-            <h3>3. 风险提示</h3>
-            <ul class="risk-list">
-              <li v-for="risk in generatedPlan.risks" :key="risk">{{ risk }}</li>
-            </ul>
+          <!-- 测试用例列表 -->
+          <section class="doc-section cases-section">
+            <div class="section-header">
+              <div class="section-icon-wrap cases-icon">
+                <List :size="20" />
+              </div>
+              <h3>测试用例</h3>
+              <span class="section-count">{{ generatedPlan.testCases.length }} 条</span>
+            </div>
+            
+            <div class="testcase-list">
+              <div 
+                v-for="(testCase, idx) in generatedPlan.testCases" 
+                :key="testCase.id" 
+                class="testcase-card"
+                :style="{ '--card-delay': idx * 0.03 + 's' }"
+              >
+                <!-- 用例头部 -->
+                <div class="card-header">
+                  <div class="card-meta">
+                    <span class="case-id">{{ testCase.id }}</span>
+                    <span class="case-category">
+                      <component :is="getCategoryIcon(testCase.category)" :size="13" />
+                      {{ testCase.category }}
+                    </span>
+                  </div>
+                  <span :class="['priority-badge', getPriorityClass(testCase.priority)]">
+                    <component :is="getPriorityIcon(testCase.priority)" :size="12" />
+                    {{ testCase.priority }}
+                  </span>
+                </div>
+                
+                <!-- 用例标题 -->
+                <h4 class="case-title">{{ testCase.title }}</h4>
+                
+                <!-- 用例详情 -->
+                <div class="card-content">
+                  <div class="content-row">
+                    <div class="content-label">
+                      <Clock :size="14" />
+                      <span>前置条件</span>
+                    </div>
+                    <p class="content-value">{{ testCase.precondition }}</p>
+                  </div>
+                  
+                  <div class="content-row">
+                    <div class="content-label">
+                      <ListOrdered :size="14" />
+                      <span>测试步骤</span>
+                    </div>
+                    <ol class="steps-list">
+                      <li v-for="(step, sIdx) in testCase.steps" :key="sIdx">
+                        <span class="step-num">{{ sIdx + 1 }}</span>
+                        <span class="step-text">{{ step }}</span>
+                      </li>
+                    </ol>
+                  </div>
+                  
+                  <div class="content-row expected-row">
+                    <div class="content-label">
+                      <CheckCircle :size="14" />
+                      <span>预期结果</span>
+                    </div>
+                    <p class="content-value expected-value">{{ testCase.expectedResult }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 风险提示 -->
+          <section v-if="generatedPlan.risks && generatedPlan.risks.length > 0" class="doc-section risks-section">
+            <div class="section-header">
+              <div class="section-icon-wrap risk-icon">
+                <AlertTriangle :size="20" />
+              </div>
+              <h3>风险提示</h3>
+              <span class="section-count risk-count">{{ generatedPlan.risks.length }} 项</span>
+            </div>
+            
+            <div class="risk-grid">
+              <div 
+                v-for="(risk, idx) in generatedPlan.risks" 
+                :key="idx" 
+                class="risk-card"
+                :style="{ '--card-delay': idx * 0.05 + 's' }"
+              >
+                <div class="risk-indicator"></div>
+                <div class="risk-content">
+                  <AlertTriangle :size="16" class="risk-icon" />
+                  <p>{{ risk }}</p>
+                </div>
+              </div>
+            </div>
           </section>
         </article>
       </section>
@@ -238,21 +338,31 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
+  AlertTriangle,
   ArrowUp,
   Blocks,
   Bot,
+  CheckCircle,
   ChevronDown,
+  Clock,
   Copy,
   Download,
+  FileCheck,
   FileText,
   FlaskConical,
+  Globe,
   Link as LinkIcon,
+  List,
+  ListOrdered,
   Network,
   RefreshCw,
+  Shield,
   ShieldCheck,
   Sparkle,
   Sparkles,
+  Target,
   TestTubeDiagonal,
+  Wifi,
   X,
   Zap
 } from '@lucide/vue'
@@ -523,5 +633,47 @@ function extractTitle(input: string): string {
     return 'api'
   }
   return 'test'
+}
+
+// 优先级样式类
+function getPriorityClass(priority: string): string {
+  const p = priority.toLowerCase()
+  if (p.includes('高') || p.includes('high') || p === 'p0' || p === 'p1') {
+    return 'priority-high'
+  }
+  if (p.includes('中') || p.includes('medium') || p === 'p2') {
+    return 'priority-medium'
+  }
+  return 'priority-low'
+}
+
+// 优先级图标
+function getPriorityIcon(priority: string) {
+  const p = priority.toLowerCase()
+  if (p.includes('高') || p.includes('high') || p === 'p0' || p === 'p1') {
+    return AlertTriangle
+  }
+  if (p.includes('中') || p.includes('medium') || p === 'p2') {
+    return Shield
+  }
+  return ShieldCheck
+}
+
+// 分类图标
+function getCategoryIcon(category: string) {
+  const c = category.toLowerCase()
+  if (c.includes('接口') || c.includes('api')) {
+    return Wifi
+  }
+  if (c.includes('web') || c.includes('界面') || c.includes('ui')) {
+    return Globe
+  }
+  if (c.includes('安全') || c.includes('security')) {
+    return ShieldCheck
+  }
+  if (c.includes('功能')) {
+    return Blocks
+  }
+  return TestTubeDiagonal
 }
 </script>
